@@ -30,9 +30,12 @@ import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
 import { loadFont as loadSerif } from "@remotion/google-fonts/InstrumentSerif";
 import { loadFont as loadMono } from "@remotion/google-fonts/JetBrainsMono";
 
-const { fontFamily: INTER } = loadInter();
-const { fontFamily: SERIF } = loadSerif();
-const { fontFamily: MONO } = loadMono();
+const LATIN = { subsets: ["latin"], ignoreTooManyRequestsWarning: true };
+const { fontFamily: INTER } = loadInter("normal", { weights: ["400", "700", "800"], ...LATIN });
+// Instrument Serif itálica é usada em 1 palavra por título-chave: carrega os dois estilos.
+loadSerif("italic", { weights: ["400"], ...LATIN });
+const { fontFamily: SERIF } = loadSerif("normal", { weights: ["400"], ...LATIN });
+const { fontFamily: MONO } = loadMono("normal", { weights: ["400", "700"], ...LATIN });
 
 /* ------------------------------------------------------- TOKENS (marketing) */
 const BRAND = {

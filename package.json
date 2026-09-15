@@ -1,0 +1,24 @@
+{
+  "name": "kontiva-reforma-video",
+  "version": "1.0.0",
+  "description": "Vídeo explainer do simulador de Reforma Tributária do Kontiva, feito em Remotion.",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio src/index.jsx",
+    "studio": "remotion studio src/index.jsx",
+    "render": "remotion render src/index.jsx Master out/master.mp4",
+    "compositions": "remotion compositions src/index.jsx",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.525",
+    "@remotion/google-fonts": "4.0.525",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.525"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "4.0.525",
+    "@remotion/renderer": "4.0.525"
+  }
+}
