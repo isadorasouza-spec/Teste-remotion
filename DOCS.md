@@ -163,6 +163,26 @@ Só os valores confirmados por print recebem contagem/close. Itens marcados como
 - **Locução:** sem narração gravada, foram usadas as durações piloto (seção 7). Com
   locução, sincronizar via `DURATIONS` em `Master.jsx`.
 
+## Animações da demo (v3)
+
+Camada extra de movimento, mantendo a interface real:
+
+- **Cena 1:** um cursor de mouse desliza até o cliente **Vértice** (o que abre na
+  Cena 2), clica (com ripple), e a linha salta "para frente" em 3D (`perspective`
+  + `translateZ` + sombra + borda ciano) enquanto as outras recuam e escurecem.
+  Duração 300 → 360 frames.
+- **Cena 5:** uma "câmera" (wrapper com `transform: translate+scale`) dá zoom em
+  cada um dos 4 KPIs em sequência, isolando um por vez (os demais escurecem), e
+  volta ao overview mostrando a Apuração. Duração 300 → 440 frames.
+- **Cena 7:** a câmera dá zoom no gráfico e faz um travelling horizontal seguindo
+  a linha de saldo acumulado mês a mês (sobe no 2027-03, desce nos seguintes),
+  passa pelas lacunas e volta ao enquadramento cheio, revelando a tabela mensal.
+  Duração 320 → 440 frames. As coordenadas da câmera são calibradas em px de mundo
+  (1920×1080) a partir do still do gráfico.
+
+`Master.jsx` recalcula offsets e `MASTER_DURATION` a partir de `DURATIONS`
+(agora 3390 frames ≈ 113s).
+
 ## Reconstrução para a interface real (v2)
 
 - Origem: zip `blueaccount-ai-main.zip` (commitado no `main` deste repo), extraído e

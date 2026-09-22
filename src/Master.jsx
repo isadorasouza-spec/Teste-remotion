@@ -23,13 +23,13 @@ import { Cena7FluxoCaixa } from "./scenes/Cena7FluxoCaixa";
 /* Durações piloto (frames @30fps). */
 export const DURATIONS = {
   intro: 120, // 4s
-  c1: 300, // 10s
+  c1: 360, // 12s  (v3: cursor + destaque 3D do cliente selecionado)
   c2: 300, // 10s
   c3: 600, // 20s
   c4: 500, // 16,7s
-  c5: 300, // 10s
+  c5: 440, // 14,7s (v3: zoom em cada um dos 4 KPIs)
   c6: 500, // 16,7s
-  c7: 320, // 10,7s
+  c7: 440, // 14,7s (v3: zoom + travelling horizontal seguindo o gráfico)
   outro: 130, // 4,3s
 };
 

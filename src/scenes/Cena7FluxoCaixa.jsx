@@ -1,14 +1,16 @@
 /**
  * Cena 7 — aba "Fluxo de caixa" do editor. Recriada fiel a FluxoCaixaPanel
- * (MvpSimulacaoEditorPage.tsx): checkbox de split payment, gráfico combinado
- * (barras "Saldo do mês" verde/vermelha + linha "Saldo acumulado" navy) e a
- * tabela mensal de 8 colunas. Respeita as lacunas reais de meses; meses 07/08
- * (aprox) ficam de-enfatizados. Bloco 4:30–4:48, 320 frames.
+ * (MvpSimulacaoEditorPage.tsx). 440 frames.
+ *
+ * Animação extra (v3): uma "câmera" dá zoom no gráfico e faz um travelling
+ * horizontal para a direita acompanhando a linha de saldo acumulado mês a mês
+ * (sobe no 2027-03, desce nos seguintes), passa pelas lacunas e depois volta ao
+ * enquadramento cheio, revelando a tabela mensal — a cena pronta que já temos.
  *
  * Pendência PRD: "cashback de até 540 dias" não existe na tela; não inventado.
  */
 import React from "react";
-import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, Easing } from "remotion";
 import { THEME, brl } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
 import { AppShell, SegmentedTabs } from "../ui/AppShell";
@@ -42,9 +44,17 @@ const COL_FLEX = [1.0, 1.35, 1.35, 1.35, 1.5, 1.4, 1.25, 1.3];
 const YMAX = 500000;
 const signedBrl = (n) => (n < 0 ? `-${brl(Math.abs(n))}` : brl(n));
 
+/* câmera: keyframes (coordenadas de mundo 1920x1080, calibradas na tela) */
+const CAM_T = [0, 34, 58, 94, 130, 164, 198, 226, 252, 302, 440];
+const CAM_X = [960, 960, 520, 636, 751, 866, 981, 1120, 1120, 960, 960];
+const CAM_Y = [540, 540, 538, 368, 511, 529, 566, 462, 462, 540, 540];
+const CAM_S = [1, 1, 2.3, 2.3, 2.3, 2.3, 2.3, 2.0, 2.0, 1, 1];
+const BAR_T = [46, 82, 118, 152, 186]; // início do crescimento de cada barra confirmada
+const PT_T = [52, 88, 124, 158, 192]; // aparição de cada ponto da linha
+
 const Chart = () => {
   const frame = useCurrentFrame();
-  const enter = useEnter(18);
+  const enter = useEnter(14);
   const W = 1220, H = 340, padL = 118, padR = 20, padT = 14, padB = 40;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const n = DATA.meses.length, colW = plotW / n;
@@ -52,33 +62,30 @@ const Chart = () => {
   const cx = (i) => padL + colW * (i + 0.5);
   const vY = (v) => zeroY - (v / YMAX) * (plotH / 2);
   const yTicks = [500000, 250000, 0, -250000, -500000];
-  const confirmed = DATA.saldoAcum.map((v, i) => (v == null ? null : { x: cx(i), y: vY(v) })).filter(Boolean);
-  const pathD = confirmed.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  const lineProg = interpolate(frame, [66, 116], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const confirmed = DATA.saldoAcum.map((v, i) => (v == null ? null : { x: cx(i), y: vY(v), i })).filter(Boolean);
+  const pathD = confirmed.map((p, k) => `${k === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  const lineProg = interpolate(frame, [58, 206], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
-    <div style={{ opacity: enter.opacity, transform: `translateY(${enter.y}px)` }}>
+    <div style={{ opacity: enter.opacity }}>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
         {yTicks.map((t) => (
           <g key={t}>
             <line x1={padL} x2={W - padR} y1={vY(t)} y2={vY(t)} stroke="rgba(10,31,63,0.08)" strokeWidth={1} strokeDasharray="3 3" />
-            <text x={padL - 12} y={vY(t) + 4} textAnchor="end" fontFamily={THEME.fontMono} fontSize={11} fill={THEME.muted}>
-              {t === 0 ? "R$ 0,00" : signedBrl(t)}
-            </text>
+            <text x={padL - 12} y={vY(t) + 4} textAnchor="end" fontFamily={THEME.fontMono} fontSize={11} fill={THEME.muted}>{t === 0 ? "R$ 0,00" : signedBrl(t)}</text>
           </g>
         ))}
         <line x1={padL} x2={W - padR} y1={zeroY} y2={zeroY} stroke="rgba(10,31,63,0.2)" strokeWidth={1.2} />
         {DATA.saldoMes.map((v, i) => {
           if (v == null) return <rect key={i} x={cx(i) - colW * 0.22} y={zeroY - 5} width={colW * 0.44} height={10} rx={3} fill="#EDF0F5" />;
-          const grow = interpolate(frame, [36 + i * 7, 50 + i * 7], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+          const grow = interpolate(frame, [BAR_T[i], BAR_T[i] + 20], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
           const full = vY(v), h = Math.abs(full - zeroY) * grow, y = v >= 0 ? zeroY - h : zeroY;
           return <rect key={i} x={cx(i) - colW * 0.26} y={y} width={colW * 0.52} height={h} rx={3} fill={v >= 0 ? POS : NEG} />;
         })}
-        <path d={pathD} fill="none" stroke={LINE} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-          pathLength={1} strokeDasharray={1} strokeDashoffset={1 - lineProg} />
-        {confirmed.map((p, i) => {
-          const show = interpolate(frame, [66 + i * 10, 74 + i * 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-          return <circle key={i} cx={p.x} cy={p.y} r={3.5} fill={LINE} opacity={show} />;
+        <path d={pathD} fill="none" stroke={LINE} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - lineProg} />
+        {confirmed.map((p, k) => {
+          const show = interpolate(frame, [PT_T[k], PT_T[k] + 8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+          return <circle key={k} cx={p.x} cy={p.y} r={3.6} fill={LINE} opacity={show} />;
         })}
         {DATA.meses.map((l, i) => (
           <text key={l} x={cx(i)} y={H - 14} textAnchor="middle" fontFamily={THEME.fontMono} fontSize={10.5} fill={i < 5 ? THEME.body : THEME.muted}>{l}</text>
@@ -89,9 +96,9 @@ const Chart = () => {
 };
 
 const TableRow = ({ row, index }) => {
-  const appear = 150 + index * 12;
+  const appear = 305 + index * 9;
   const { opacity, y } = useEnter(appear);
-  const counted = row.vals.map((v, i) => useCountUp(v ?? 0, appear + 4 + i, 18));
+  const counted = row.vals.map((v, i) => useCountUp(v ?? 0, appear + 3 + i, 16));
   return (
     <div style={{ display: "flex", alignItems: "center", padding: "11px 18px", borderTop: `1px solid ${THEME.hairline}`,
       opacity, transform: `translateY(${y}px)`, background: row.aprox ? "#FAFBFD" : "transparent" }}>
@@ -123,38 +130,45 @@ const Legend = () => (
 );
 
 export const Cena7FluxoCaixa = () => {
+  const frame = useCurrentFrame();
   const head = useEnter(8, 18);
+  const eo = { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) };
+  const cx = interpolate(frame, CAM_T, CAM_X, eo);
+  const cy = interpolate(frame, CAM_T, CAM_Y, eo);
+  const s = interpolate(frame, CAM_T, CAM_S, eo);
+
   return (
-    <AbsoluteFill style={{ background: THEME.pageBg }}>
-      <AppShell breadcrumb={DATA.breadcrumb} contentPadding="24px 34px">
-        <SegmentedTabs tabs={DATA.tabs} activeIndex={2} appear={6} />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18,
-          opacity: head.opacity, transform: `translateY(${head.y}px)` }}>
-          <div>
-            <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 30, letterSpacing: "-0.03em", color: THEME.navy }}>{DATA.title}</div>
-            <div style={{ fontFamily: THEME.fontBody, fontSize: 14.5, color: THEME.muted, marginTop: 6 }}>{DATA.desc}</div>
+    <AbsoluteFill style={{ background: THEME.pageBg, overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, transformOrigin: "0 0", transform: `translate(${960 - cx * s}px, ${540 - cy * s}px) scale(${s})` }}>
+        <AppShell breadcrumb={DATA.breadcrumb} contentPadding="24px 34px">
+          <SegmentedTabs tabs={DATA.tabs} activeIndex={2} appear={6} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18, opacity: head.opacity, transform: `translateY(${head.y}px)` }}>
+            <div>
+              <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 30, letterSpacing: "-0.03em", color: THEME.navy }}>{DATA.title}</div>
+              <div style={{ fontFamily: THEME.fontBody, fontSize: 14.5, color: THEME.muted, marginTop: 6 }}>{DATA.desc}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${THEME.border}`, background: THEME.surface }} />
+              <span style={{ fontFamily: THEME.fontBody, fontSize: 14, fontWeight: 500, color: THEME.navy }}>{DATA.checkbox}</span>
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${THEME.border}`, background: THEME.surface }} />
-            <span style={{ fontFamily: THEME.fontBody, fontSize: 14, fontWeight: 500, color: THEME.navy }}>{DATA.checkbox}</span>
-          </div>
-        </div>
 
-        <div style={{ marginTop: 14, background: THEME.surface, borderRadius: 16, border: `1px solid ${THEME.cardBorder}`, boxShadow: THEME.cardShadow, padding: "16px 18px" }}>
-          <Legend />
-          <Chart />
-        </div>
-
-        <div style={{ marginTop: 12, background: THEME.surface, borderRadius: 16, border: `1px solid ${THEME.cardBorder}`, overflow: "hidden" }}>
-          <div style={{ display: "flex", padding: "11px 18px", background: THEME.pageBg }}>
-            {DATA.cols.map((c, i) => (
-              <div key={c} style={{ flex: COL_FLEX[i], textAlign: i === 0 ? "left" : "right", fontFamily: THEME.fontMono,
-                fontWeight: 700, fontSize: 9, letterSpacing: "0.04em", textTransform: "uppercase", color: THEME.muted, lineHeight: 1.2 }}>{c}</div>
-            ))}
+          <div style={{ marginTop: 14, background: THEME.surface, borderRadius: 16, border: `1px solid ${THEME.cardBorder}`, boxShadow: THEME.cardShadow, padding: "16px 18px" }}>
+            <Legend />
+            <Chart />
           </div>
-          {DATA.rows.map((r, i) => <TableRow key={r.mes} row={r} index={i} />)}
-        </div>
-      </AppShell>
+
+          <div style={{ marginTop: 12, background: THEME.surface, borderRadius: 16, border: `1px solid ${THEME.cardBorder}`, overflow: "hidden" }}>
+            <div style={{ display: "flex", padding: "11px 18px", background: THEME.pageBg }}>
+              {DATA.cols.map((c, i) => (
+                <div key={c} style={{ flex: COL_FLEX[i], textAlign: i === 0 ? "left" : "right", fontFamily: THEME.fontMono,
+                  fontWeight: 700, fontSize: 9, letterSpacing: "0.04em", textTransform: "uppercase", color: THEME.muted, lineHeight: 1.2 }}>{c}</div>
+              ))}
+            </div>
+            {DATA.rows.map((r, i) => <TableRow key={r.mes} row={r} index={i} />)}
+          </div>
+        </AppShell>
+      </div>
     </AbsoluteFill>
   );
 };

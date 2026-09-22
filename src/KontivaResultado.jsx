@@ -1,15 +1,17 @@
 /**
  * Cena 5 — aba "Resultado" do editor de simulação (ResultadoPanel).
- * Recriada fiel a MvpSimulacaoEditorPage.tsx (blueaccount-ai): eyebrow "Visão
- * consolidada", 4 KPIs (Resumo executivo) com borda-esquerda de tom, e a tabela
- * "Apuração IBS/CBS" (Tributo · Base de receitas · Débitos · Base de custos/
- * despesas · Créditos · Saldo) com tfoot "Total IVA" em ciano-suave.
+ * Recriada fiel a MvpSimulacaoEditorPage.tsx (blueaccount-ai). 440 frames.
+ *
+ * Animação extra (v3): uma "câmera" dá zoom em cada um dos 4 KPIs em sequência
+ * (Margem bruta, Resultado, Carga tributária, IVA líquido), isolando um por vez
+ * — o KPI em foco fica nítido e os outros escurecem — e depois volta ao overview
+ * mostrando a Apuração IBS/CBS.
  *
  * Semântica de cor real: saldo a recolher = vermelho; a recuperar = verde.
- * Dados do Anexo A. Bloco 2:50–3:40, 300 frames.
+ * Dados do Anexo A. Bloco 2:50–3:40.
  */
 import React from "react";
-import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, Easing } from "remotion";
 import { THEME, brl, pct } from "./ui/tokens";
 import { useCountUp, useEnter } from "./ui/motion";
 import { AppShell, SegmentedTabs } from "./ui/AppShell";
@@ -41,27 +43,33 @@ const DATA = {
 
 const AP_FLEX = [1, 1.5, 1.2, 1.7, 1.2, 1.4];
 
-const Kpi = ({ kpi, index }) => {
+/* ---- câmera: centros (mundo, 1920x1080) dos 4 KPIs e keyframes ---- */
+const KPI_XY = [[511, 368], [897, 368], [1281, 368], [1665, 368]];
+const ZS = 2.05;
+const CAM_T = [0, 92, 112, 156, 176, 220, 240, 284, 304, 348, 372, 440];
+const CAM_X = [960, 960, 511, 511, 897, 897, 1281, 1281, 1665, 1665, 960, 960];
+const CAM_Y = [540, 540, 368, 368, 368, 368, 368, 368, 368, 368, 540, 540];
+const CAM_S = [1, 1, ZS, ZS, ZS, ZS, ZS, ZS, ZS, ZS, 1, 1];
+const HOLDS = [[112, 156, 0], [176, 220, 1], [240, 284, 2], [304, 348, 3]];
+
+const Kpi = ({ kpi, index, focusIndex, focusAmt }) => {
   const appear = 34 + index * 8;
   const { opacity, y } = useEnter(appear);
-  const frame = useCurrentFrame();
   const counted = useCountUp(kpi.value, appear + 4, 26);
   const display = kpi.kind === "pct" ? pct(counted) : brl(counted);
   const toneBorder = kpi.tone === "positivo" ? THEME.green : kpi.tone === "negativo" ? THEME.red : THEME.cardBorder;
   const toneText = kpi.tone === "positivo" ? THEME.greenText : kpi.tone === "negativo" ? THEME.redText : THEME.navy;
-  const isHero = kpi.detail === "a recuperar";
-  const pulse = isHero ? interpolate(frame, [168, 182, 200], [0, 1, 0.4], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) : 0;
+  const dim = focusIndex !== -1 && focusIndex !== index ? focusAmt * 0.62 : 0;
+  const up = focusIndex === index ? focusAmt : 0;
   return (
-    <div style={{ flex: 1, background: THEME.pageBg, borderRadius: 10, border: `1px solid rgba(10,31,63,0.09)`,
-      borderLeft: `3px solid ${toneBorder}`, padding: "16px 18px", opacity, transform: `translateY(${y}px)`,
-      boxShadow: `0 0 0 ${2 * pulse}px rgba(22,163,74,${0.3 * pulse})` }}>
+    <div style={{ flex: 1, background: THEME.surface, borderRadius: 10, border: `1px solid rgba(10,31,63,0.09)`,
+      borderLeft: `3px solid ${toneBorder}`, padding: "16px 18px", opacity: opacity * (1 - dim), transform: `translateY(${y}px)`,
+      boxShadow: up ? `0 20px 50px -22px rgba(10,31,63,${0.4 * up})` : "none" }}>
       <div style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 10.5, letterSpacing: "0.05em", textTransform: "uppercase",
         color: THEME.muted, lineHeight: 1.3, minHeight: 28 }}>{kpi.label}</div>
       <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 30, letterSpacing: "-0.025em", color: toneText,
         marginTop: 12, fontVariantNumeric: "tabular-nums" }}>{display}</div>
-      {kpi.detail && (
-        <div style={{ fontFamily: THEME.fontBody, fontWeight: 600, fontSize: 11.5, color: THEME.green, marginTop: 5 }}>{kpi.detail}</div>
-      )}
+      {kpi.detail && <div style={{ fontFamily: THEME.fontBody, fontWeight: 600, fontSize: 11.5, color: THEME.green, marginTop: 5 }}>{kpi.detail}</div>}
     </div>
   );
 };
@@ -78,9 +86,8 @@ const ApRow = ({ row, index, isFoot }) => {
   const saldo = useCountUp(row.saldo, (isFoot ? 138 : appear) + 8, 24);
   const saldoColor = row.tone === "recuperar" ? THEME.green : THEME.red;
   return (
-    <div style={{ display: "flex", alignItems: "center", padding: "16px 18px",
-      borderTop: `1px solid ${THEME.hairline}`, opacity, transform: `translateY(${y}px)`,
-      background: isFoot ? THEME.cianoSoft : "transparent" }}>
+    <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", borderTop: `1px solid ${THEME.hairline}`,
+      opacity, transform: `translateY(${y}px)`, background: isFoot ? THEME.cianoSoft : "transparent" }}>
       <ApCell flex={AP_FLEX[0]} align="left" strong color={THEME.navy}>{row.trib}</ApCell>
       <ApCell flex={AP_FLEX[1]}>{row.vals[0] == null ? "" : brl(v[0])}</ApCell>
       <ApCell flex={AP_FLEX[2]} strong={isFoot}>{brl(v[1])}</ApCell>
@@ -106,58 +113,63 @@ const Header = () => {
         <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 40, letterSpacing: "-0.03em", color: THEME.navy,
           marginTop: 8, opacity: tt.opacity, transform: `translateY(${tt.y}px)` }}>{DATA.title}</div>
       </div>
-      <div style={{ maxWidth: 470, textAlign: "right", fontFamily: THEME.fontBody, fontSize: 14, lineHeight: 1.5,
-        color: THEME.muted, opacity: hp.opacity }}>{DATA.helper}</div>
+      <div style={{ maxWidth: 470, textAlign: "right", fontFamily: THEME.fontBody, fontSize: 14, lineHeight: 1.5, color: THEME.muted, opacity: hp.opacity }}>{DATA.helper}</div>
     </div>
   );
 };
 
 export const KontivaResultado = () => {
+  const frame = useCurrentFrame();
+  const eo = { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) };
+  const cx = interpolate(frame, CAM_T, CAM_X, eo);
+  const cy = interpolate(frame, CAM_T, CAM_Y, eo);
+  const s = interpolate(frame, CAM_T, CAM_S, eo);
+  const focusAmt = interpolate(s, [1, ZS], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  let focusIndex = -1;
+  for (const [a, b, i] of HOLDS) if (frame >= a - 12 && frame <= b + 4) focusIndex = i;
+
   return (
-    <AbsoluteFill style={{ background: THEME.pageBg }}>
-      <AppShell breadcrumb={DATA.breadcrumb} contentPadding="26px 34px">
-        <div style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: THEME.muted }}>
-          {DATA.eyebrowEditor}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
-          <SegmentedTabs tabs={DATA.tabs} activeIndex={0} appear={10} />
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: THEME.surface, border: `1px solid ${THEME.cardBorder}`,
-            padding: "9px 16px", borderRadius: 10 }}>
-            <span style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: THEME.muted }}>{DATA.premissasLabel}</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {DATA.premissas.map((p, i) => (
-                <React.Fragment key={p}>
-                  {i > 0 && <span style={{ color: THEME.muted, opacity: 0.5 }}>·</span>}
-                  <span style={{ fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 13, color: THEME.navy }}>{p}</span>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 18, background: THEME.surface, borderRadius: 18, border: `1px solid ${THEME.cardBorder}`,
-          boxShadow: THEME.cardShadow, padding: "30px 34px" }}>
-          <Header />
-          <div style={{ display: "flex", gap: 16 }}>
-            {DATA.kpis.map((k, i) => <Kpi key={k.label} kpi={k} index={i} />)}
-          </div>
-
-          <div style={{ marginTop: 30 }}>
-            <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 19, color: THEME.navy }}>{DATA.apTitle}</div>
-            <div style={{ fontFamily: THEME.fontBody, fontSize: 14, color: THEME.muted, marginTop: 6 }}>{DATA.apSub}</div>
-            <div style={{ marginTop: 16, border: `1px solid ${THEME.cardBorder}`, borderRadius: 12, overflow: "hidden" }}>
-              <div style={{ display: "flex", padding: "12px 18px", background: THEME.pageBg }}>
-                {DATA.apCols.map((c, i) => (
-                  <div key={c} style={{ flex: AP_FLEX[i], textAlign: i === 0 ? "left" : "right", fontFamily: THEME.fontMono,
-                    fontWeight: 700, fontSize: 9.5, letterSpacing: "0.05em", textTransform: "uppercase", color: THEME.muted }}>{c}</div>
+    <AbsoluteFill style={{ background: THEME.pageBg, overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, transformOrigin: "0 0", transform: `translate(${960 - cx * s}px, ${540 - cy * s}px) scale(${s})` }}>
+        <AppShell breadcrumb={DATA.breadcrumb} contentPadding="26px 34px">
+          <div style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: THEME.muted }}>{DATA.eyebrowEditor}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+            <SegmentedTabs tabs={DATA.tabs} activeIndex={0} appear={10} />
+            <div style={{ display: "flex", alignItems: "center", gap: 12, background: THEME.surface, border: `1px solid ${THEME.cardBorder}`, padding: "9px 16px", borderRadius: 10 }}>
+              <span style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: THEME.muted }}>{DATA.premissasLabel}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {DATA.premissas.map((p, i) => (
+                  <React.Fragment key={p}>
+                    {i > 0 && <span style={{ color: THEME.muted, opacity: 0.5 }}>·</span>}
+                    <span style={{ fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 13, color: THEME.navy }}>{p}</span>
+                  </React.Fragment>
                 ))}
               </div>
-              {DATA.apRows.map((r, i) => <ApRow key={r.trib} row={r} index={i} />)}
-              <ApRow row={DATA.apTotal} index={0} isFoot />
             </div>
           </div>
-        </div>
-      </AppShell>
+
+          <div style={{ marginTop: 18, background: THEME.surface, borderRadius: 18, border: `1px solid ${THEME.cardBorder}`, boxShadow: THEME.cardShadow, padding: "30px 34px" }}>
+            <Header />
+            <div style={{ display: "flex", gap: 16 }}>
+              {DATA.kpis.map((k, i) => <Kpi key={k.label} kpi={k} index={i} focusIndex={focusIndex} focusAmt={focusAmt} />)}
+            </div>
+            <div style={{ marginTop: 30 }}>
+              <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 19, color: THEME.navy }}>{DATA.apTitle}</div>
+              <div style={{ fontFamily: THEME.fontBody, fontSize: 14, color: THEME.muted, marginTop: 6 }}>{DATA.apSub}</div>
+              <div style={{ marginTop: 16, border: `1px solid ${THEME.cardBorder}`, borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ display: "flex", padding: "12px 18px", background: THEME.pageBg }}>
+                  {DATA.apCols.map((c, i) => (
+                    <div key={c} style={{ flex: AP_FLEX[i], textAlign: i === 0 ? "left" : "right", fontFamily: THEME.fontMono,
+                      fontWeight: 700, fontSize: 9.5, letterSpacing: "0.05em", textTransform: "uppercase", color: THEME.muted }}>{c}</div>
+                  ))}
+                </div>
+                {DATA.apRows.map((r, i) => <ApRow key={r.trib} row={r} index={i} />)}
+                <ApRow row={DATA.apTotal} index={0} isFoot />
+              </div>
+            </div>
+          </div>
+        </AppShell>
+      </div>
     </AbsoluteFill>
   );
 };
