@@ -100,8 +100,10 @@ const Row = ({ row, index, appear, creditFocus, storyPulse }) => {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 6, alignItems: "center", padding: "8px 16px",
-      borderTop: index === 0 ? "none" : `1px solid ${THEME.hairline}`, opacity, transform: `translateY(${y}px)`,
-      background: storyPulse ? `rgba(0,212,255,${0.10 * storyPulse})` : "transparent" }}>
+      borderTop: index === 0 ? "none" : `1px solid ${THEME.hairline}`, opacity,
+      transform: `translateY(${y}px) scale(${1 + 0.012 * storyPulse})`, transformOrigin: "left center",
+      background: storyPulse ? `rgba(0,212,255,${0.14 * storyPulse})` : "transparent",
+      boxShadow: storyPulse ? `inset 3px 0 0 rgba(0,212,255,${0.9 * storyPulse})` : "none", borderRadius: storyPulse ? 8 : 0 }}>
       <div>
         <div style={{ fontFamily: THEME.fontBody, fontWeight: 500, fontSize: 14.5, color: THEME.navy }}>{row.desc}</div>
         {row.tag && <Tag tag={row.tag} appear={appear + 14} />}
@@ -204,14 +206,20 @@ const SectionHeader = ({ label, count, totals, appear, totAppear }) => {
   );
 };
 
-/* Câmera de rolagem (Cena 3): deslize CONTÍNUO e LENTO de cima para baixo (um
- * único trecho longo, sem "travar" a cada linha), com zoom moderado que mantém
- * as linhas centralizadas e legíveis. Termina sobre as linhas/totais, sem cair
- * no espaço em branco do rodapé. cx ~1000. */
-const SCROLL_T = [0, 50, 380, 520];
-const SCROLL_X = [960, 960, 960, 960];
-const SCROLL_Y = [300, 320, 460, 460];
-const SCROLL_S = [1.28, 1.45, 1.45, 1.45];
+/* Câmera de rolagem (Cena 3): zoom fechado nos produtos, com "parar e seguir" a
+ * cada linha — mas suave: cada movimento tem aceleração/desaceleração (easing)
+ * e uma PAUSA (settle) na linha antes de ir para a próxima. Depois de passar por
+ * todas as linhas, volta ao enquadramento cheio. cx ~830 mantém Descrição +
+ * IBS%/CBS% legíveis. Centros de linha (mundo): 286 · 341 · 396 · 451 · 506 · 561. */
+const ZR = 2.2; // zoom fechado nas linhas
+const SCROLL_T = [0,   28,  70,  92,  126, 148, 182, 204, 238, 260, 294, 316, 356, 410, 520];
+const SCROLL_X = [700, 680, 680, 680, 680, 680, 680, 680, 680, 680, 680, 680, 680, 960, 960];
+const SCROLL_Y = [260, 286, 286, 341, 341, 396, 396, 451, 451, 506, 506, 561, 561, 540, 540];
+const SCROLL_S = [1.25, ZR, ZR,  ZR,  ZR,  ZR,  ZR,  ZR,  ZR,  ZR,  ZR,  ZR,  ZR,  1.0, 1.0];
+
+/* Janelas (frames) em que a câmera está "parada" em cada linha — usadas para
+ * destacar (highlight) a linha em foco durante a rolagem. */
+const FOCUS_WIN = [[24, 78], [88, 130], [144, 186], [200, 242], [256, 298], [312, 362]];
 
 /* Câmera da Cena 4 (cursor): identidade até o clique, depois zoom no drawer que
  * abre abaixo da Manteiga (menu "Tratamento fiscal"), segura e volta ao cheio. */
@@ -233,10 +241,11 @@ export const LancamentosScreen = ({ mode = "scroll", focus = "receitas", drawerR
   const cy = scroll ? kf(frame, SCROLL_T, SCROLL_Y) : cursorMode ? kf(frame, CUR_T, CUR_Y) : 540;
   const s = scroll ? kf(frame, SCROLL_T, SCROLL_S) : cursorMode ? kf(frame, CUR_T, CUR_S) : 1;
 
-  // timings de revelação das linhas por modo
-  const rowStart = scroll ? 34 : 24;
-  const rowStep = scroll ? 26 : 8;
-  const totAppearReceitas = scroll ? 200 : 60;
+  // timings de revelação das linhas por modo (no scroll, cada linha surge quando
+  // a câmera chega nela — passo casado com os keyframes da câmera)
+  const rowStart = scroll ? 18 : 24;
+  const rowStep = scroll ? 56 : 8;
+  const totAppearReceitas = scroll ? 330 : 60;
 
   // cursor (Cena 4): clica nas colunas de crédito da linha Manteiga → abre o drawer
   const cur = useClickCursor(frame, {
@@ -286,7 +295,13 @@ export const LancamentosScreen = ({ mode = "scroll", focus = "receitas", drawerR
           </div>
           {LANC.receitas.map((row, i) => {
             const appear = rowStart + i * rowStep;
-            const hi = !scroll && i === 2 ? interpolate(frame, [132, 142, 260], [0, 1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) : 0;
+            let hi = 0;
+            if (!scroll && i === 2) {
+              hi = interpolate(frame, [132, 142, 260], [0, 1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+            } else if (scroll) {
+              const w = FOCUS_WIN[i];
+              hi = interpolate(frame, [w[0], w[0] + 10, w[1] - 8, w[1]], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+            }
             return (
               <React.Fragment key={row.desc}>
                 <Row row={row} index={i} appear={appear} creditFocus={focus === "custos" ? creditPulse : 0} storyPulse={hi} />
@@ -299,7 +314,7 @@ export const LancamentosScreen = ({ mode = "scroll", focus = "receitas", drawerR
         {/* Custos Diretos — resumo (linhas individuais aproximadas: sem close) */}
         <div style={{ marginTop: 14, background: THEME.surface, border: `1px solid ${focus === "custos" && creditPulse ? "rgba(0,212,255,0.5)" : THEME.cardBorder}`,
           borderRadius: 16, boxShadow: focus === "custos" ? `0 0 0 ${2 * creditPulse}px rgba(0,212,255,${0.16 * creditPulse})` : "none", overflow: "hidden" }}>
-          <SectionHeader label="Custos Diretos" count="8" totals={LANC.custosTot} appear={scroll ? 250 : 56} totAppear={scroll ? 262 : 66} />
+          <SectionHeader label="Custos Diretos" count="8" totals={LANC.custosTot} appear={scroll ? 356 : 56} totAppear={scroll ? 366 : 66} />
         </div>
       </AppShell>
       </CameraStage>
