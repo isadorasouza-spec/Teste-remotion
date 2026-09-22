@@ -204,12 +204,20 @@ const SectionHeader = ({ label, count, totals, appear, totAppear }) => {
   );
 };
 
-/* Câmera de rolagem (Cena 3): desce pela lista revelando linha a linha com zoom.
- * cx ~1000 e zoom moderado (1.35) mantêm a coluna Descrição visível à esquerda. */
-const SCROLL_T = [0, 36, 70, 100, 128, 156, 184, 214, 250, 292, 520];
-const SCROLL_X = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 960, 960];
-const SCROLL_Y = [300, 320, 352, 407, 462, 517, 572, 628, 700, 540, 540];
-const SCROLL_S = [1.22, 1.35, 1.35, 1.35, 1.35, 1.35, 1.35, 1.3, 1.2, 1.0, 1.0];
+/* Câmera de rolagem (Cena 3): um deslize CONTÍNUO de cima para baixo (um único
+ * trecho longo, para não "travar" a cada linha), com zoom moderado que mantém a
+ * coluna Descrição visível. cx ~1000. */
+const SCROLL_T = [0, 34, 250, 296, 520];
+const SCROLL_X = [1000, 1000, 1000, 960, 960];
+const SCROLL_Y = [280, 300, 700, 540, 540];
+const SCROLL_S = [1.18, 1.35, 1.35, 1.0, 1.0];
+
+/* Câmera da Cena 4 (cursor): identidade até o clique, depois zoom no drawer que
+ * abre abaixo da Manteiga (menu "Tratamento fiscal"), segura e volta ao cheio. */
+const CUR_T = [0, 150, 176, 430, 470, 500];
+const CUR_X = [960, 960, 960, 960, 960, 960];
+const CUR_Y = [540, 540, 566, 566, 540, 540];
+const CUR_S = [1, 1, 1.34, 1.34, 1, 1];
 
 export const LancamentosScreen = ({ mode = "scroll", focus = "receitas", drawerRow, drawerContent, drawerStart = 320, creditStart = 999 }) => {
   const frame = useCurrentFrame();
@@ -219,9 +227,10 @@ export const LancamentosScreen = ({ mode = "scroll", focus = "receitas", drawerR
 
   // câmera
   const scroll = mode === "scroll";
-  const cx = scroll ? kf(frame, SCROLL_T, SCROLL_X) : 960;
-  const cy = scroll ? kf(frame, SCROLL_T, SCROLL_Y) : 540;
-  const s = scroll ? kf(frame, SCROLL_T, SCROLL_S) : 1;
+  const cursorMode = mode === "cursor";
+  const cx = scroll ? kf(frame, SCROLL_T, SCROLL_X) : cursorMode ? kf(frame, CUR_T, CUR_X) : 960;
+  const cy = scroll ? kf(frame, SCROLL_T, SCROLL_Y) : cursorMode ? kf(frame, CUR_T, CUR_Y) : 540;
+  const s = scroll ? kf(frame, SCROLL_T, SCROLL_S) : cursorMode ? kf(frame, CUR_T, CUR_S) : 1;
 
   // timings de revelação das linhas por modo
   const rowStart = scroll ? 34 : 24;
@@ -293,12 +302,17 @@ export const LancamentosScreen = ({ mode = "scroll", focus = "receitas", drawerR
         </div>
       </AppShell>
       </CameraStage>
-      {mode === "cursor" && (
-        <>
-          <ClickRipple x={1560} y={405} p={cur.ripple} />
-          {cur.opacity > 0 && <Cursor x={cur.x} y={cur.y} press={cur.press} opacity={cur.opacity} />}
-        </>
-      )}
+      {mode === "cursor" && (() => {
+        // cursor some depois do clique, quando a câmera dá zoom no drawer
+        const fade = interpolate(frame, [150, 166], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+        const op = cur.opacity * fade;
+        return (
+          <>
+            <ClickRipple x={1560} y={405} p={cur.ripple} />
+            {op > 0 && <Cursor x={cur.x} y={cur.y} press={cur.press} opacity={op} />}
+          </>
+        );
+      })()}
     </AbsoluteFill>
   );
 };
