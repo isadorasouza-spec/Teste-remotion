@@ -5,6 +5,18 @@ recriando a interface real do produto em Remotion e embrulhando tudo na moldura 
 marca (abertura, transições de radar e encerramento). Feito a partir do PRD
 `PRD-video-kontiva-remotion.md`.
 
+> **Fidelidade ao produto (v2):** as 7 cenas foram reconstruídas a partir do código
+> real do repositório `Bluemetrics/blueaccount-ai` (`apps/frontend`), não mais da
+> reconstrução do Anexo A. A interface real de Simulações é CLARA (canvas
+> `#F2F4F7`, cards brancos), com barra lateral e topbar navy `#0A1F3F` e acento
+> ciano `#00D4FF`; fontes reais Space Grotesk (display), Inter (corpo/números) e
+> Instrument Serif (itálico de acento). Layout, rótulos, colunas, abas e o drawer
+> de linha seguem os componentes reais (`MvpSimulacoesPage`,
+> `MvpSimulacaoClientePage`, `MvpSimulacaoEditorPage`, `MvpSimulacaoSeriePage`); os
+> dados de negócio vêm do Anexo A. Onde a interface real conflita com o PRD (que
+> descrevia um tema claro diferente e proibia ciano na UI), seguimos o código real,
+> conforme pedido — inclusive a Cena 5, refeita para a tela real de Resultado.
+
 ## Comandos
 
 ```bash
@@ -150,6 +162,32 @@ Só os valores confirmados por print recebem contagem/close. Itens marcados como
   formato agrada, já que não é nativo da tela real.
 - **Locução:** sem narração gravada, foram usadas as durações piloto (seção 7). Com
   locução, sincronizar via `DURATIONS` em `Master.jsx`.
+
+## Reconstrução para a interface real (v2)
+
+- Origem: zip `blueaccount-ai-main.zip` (commitado no `main` deste repo), extraído e
+  analisado (`apps/frontend/src`: `kontiva/kontiva.css` tokens, `components/nav`,
+  `pages/Mvp*`).
+- `src/ui/tokens.js`: tokens do produto trocados pelos reais (navy `#0A1F3F`, ciano
+  `#00D4FF`, ciano-suave `#E0F9FF`, canvas `#F2F4F7`, verde `#16A34A`, vermelho
+  `#DC2626`) e fontes reais (Space Grotesk, Inter, Instrument Serif).
+- `src/ui/AppShell.jsx`: sidebar navy 260px com os grupos de navegação reais
+  (Home/Clientes; Tributária; Cobranças; Administração), item ativo em ciano;
+  topbar navy 64px com breadcrumb mono maiúsculo e seletor PT|EN. `SegmentedTabs`
+  (abas do editor, maiúsculas) e `ClientTabs` (Grupos/Individuais).
+- Cenas reconstruídas às telas reais: 1 = lista de clientes (cards), 2 = grupo
+  "Comparativo Reforma" (SimulacaoRow), 3/4 = "Lançamentos e notas" (tabela de 9
+  colunas + drawer de 6 abas: Classificação fiscal e Tratamento fiscal), 5 =
+  ResultadoPanel (4 KPIs + Apuração IBS/CBS com "Total IVA"), 6 = série "Resumo"
+  (5 KPIs + "Comparativo anual" com cabeçalho de 2 níveis + "Resumo do fluxo de
+  caixa"), 7 = "Fluxo de caixa" (barras + linha de saldo acumulado + tabela mensal
+  de 8 colunas).
+- Formatação: BRL `R$ 1.234,00`; percentuais em pt-BR com vírgula (o código real
+  tem um formatador com ponto em algumas telas e vírgula em outras; padronizamos na
+  vírgula por ser o locale correto e coincidir com o Anexo A).
+- Ciano dentro da UI agora é permitido (o produto real usa), revertendo a proibição
+  do PRD. O overlay de delta da Cena 6 continua sendo moldura (ciano), pois a tela
+  real não tem coluna de variação.
 
 ## Ajustes feitos nesta implementação
 

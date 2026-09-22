@@ -1,140 +1,72 @@
 /**
- * Cena 1 — Lista de clientes (tela inicial de Simulações). Bloco 0:00–0:30.
- * Remotion · 1920x1080 · 30fps · 300 frames piloto.
+ * Cena 1 — "Simulações" home / lista de clientes. Bloco 0:00–0:30.
+ * Recriada fiel a MvpSimulacoesPage.tsx (blueaccount-ai). 300 frames.
  *
- * Interface fiel ao produto (marca BlueMetrics). Anima: chrome, banner de aviso,
- * tag Reforma Tributária, título/subtítulo, botões e a lista revelando linha a
- * linha. Herói: contador do badge "5 clientes" e a entrada escalonada das linhas.
+ * Estrutura real: breadcrumb, banner "Estimativa de apoio", eyebrow "Reforma
+ * tributária", h1 com a palavra "cliente" em Instrument Serif itálica, busca +
+ * badge de contagem, e CARDS de cliente (avatar, razão social, nº de simulações
+ * e grupos, CTA "Ver simulações"). Dados do Anexo A.
  */
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { THEME } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
-import { AppShell } from "../ui/AppShell";
-
-const ORANGE = "#E8811F";
-const ORANGE_SOFT = "#FDF3E7";
+import { AppShell, Ic, ICON } from "../ui/AppShell";
 
 const DATA = {
-  breadcrumb: ["SIMULAÇÕES"],
-  bannerStrong: "RECURSO EM FASE DE TESTES",
-  banner:
-    "Valores finais das alíquotas e datas da reforma ainda podem sofrer mudanças.",
-  tag: "REFORMA TRIBUTÁRIA",
-  titleParts: [
-    { t: "Escolha um " },
-    { t: "cliente", i: true },
-    { t: " para ver as simulações." },
-  ],
-  subtitle:
-    "Só aparecem aqui os clientes que já têm alguma simulação tributária criada.",
+  breadcrumb: ["Simulações", "Cenários tributários"],
+  betaBadge: "Estimativa de apoio",
+  betaText:
+    "Valores finais das alíquotas e datas da reforma ainda podem sofrer mudanças. Os resultados são estimativas de apoio e não substituem a análise do profissional responsável.",
+  eyebrow: "Reforma tributária",
+  titleA: "Escolha um ",
+  titleAccent: "cliente",
+  titleB: " para ver as simulações.",
+  desc: "Só aparecem aqui os clientes que já têm alguma simulação tributária criada.",
   btnGhost: "Ver cronograma",
   btnPrimary: "Nova simulação",
   searchPlaceholder: "Buscar cliente, simulação ou grupo",
   count: 5,
-  rowBtn: "VER SIMULAÇÕES",
+  cta: "Ver simulações",
   clients: [
-    { initials: "BM", name: "Bella Moda Indústria Têxtil Ltda.", sims: 2, groups: 0 },
-    { initials: "BS", name: "Brasa Sul Indústria de Alimentos Ltda.", sims: 11, groups: 1 },
-    { initials: "CA", name: "Construtora Atlas Ltda.", sims: 1, groups: 0 },
-    { initials: "MS", name: "MobiTech Soluções Digitais Ltda.", sims: 7, groups: 2 },
-    { initials: "VD", name: "Vértice Distribuidora Atacadista Ltda.", sims: 5, groups: 1 },
+    { ini: "BM", nome: "Bella Moda Indústria Têxtil Ltda.", sims: 2, grupos: 0 },
+    { ini: "BS", nome: "Brasa Sul Indústria de Alimentos Ltda.", sims: 11, grupos: 1 },
+    { ini: "CA", nome: "Construtora Atlas Ltda.", sims: 1, grupos: 0 },
+    { ini: "MS", nome: "MobiTech Soluções Digitais Ltda.", sims: 7, grupos: 2 },
+    { ini: "VD", nome: "Vértice Distribuidora Atacadista Ltda.", sims: 5, grupos: 1 },
   ],
 };
 
-const Avatar = ({ initials }) => (
-  <div
-    style={{
-      width: 46,
-      height: 46,
-      borderRadius: 12,
-      background: "#EDEFFB",
-      color: THEME.navy,
-      fontFamily: THEME.fontDisplay,
-      fontWeight: 800,
-      fontSize: 16,
-      letterSpacing: 0.5,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
-    }}
-  >
-    {initials}
-  </div>
-);
-
 const Metric = ({ value, label }) => (
-  <div style={{ width: 130, textAlign: "center" }}>
-    <div
-      style={{
-        fontFamily: THEME.fontBody,
-        fontWeight: 800,
-        fontSize: 22,
-        color: THEME.ink,
-        fontVariantNumeric: "tabular-nums",
-      }}
-    >
+  <div style={{ textAlign: "left" }}>
+    <div style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 15, color: THEME.navy, fontVariantNumeric: "tabular-nums" }}>
       {value}
     </div>
-    <div
-      style={{
-        fontFamily: THEME.fontDisplay,
-        fontWeight: 700,
-        fontSize: 11,
-        letterSpacing: 0.6,
-        color: THEME.muted,
-        marginTop: 2,
-      }}
-    >
-      {label}
-    </div>
+    <div style={{ fontFamily: THEME.fontBody, fontSize: 11, color: THEME.muted, marginTop: 2 }}>{label}</div>
   </div>
 );
 
-const ClientRow = ({ client, index }) => {
-  const appear = 70 + index * 14;
+const ClientCard = ({ c, index }) => {
+  const appear = 70 + index * 13;
   const { opacity, y } = useEnter(appear);
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 18,
-        padding: "20px 26px",
-        borderTop: index === 0 ? "none" : `1px solid ${THEME.line}`,
-        opacity,
-        transform: `translateY(${y}px)`,
-      }}
-    >
-      <Avatar initials={client.initials} />
-      <div
-        style={{
-          flex: 1,
-          fontFamily: THEME.fontDisplay,
-          fontWeight: 700,
-          fontSize: 20,
-          color: THEME.ink,
-        }}
-      >
-        {client.name}
+    <div style={{
+      display: "grid", gridTemplateColumns: "2.5fr 1fr 1fr auto", alignItems: "center", gap: 20,
+      background: THEME.surface, border: `1px solid ${THEME.cardBorder}`, borderRadius: 12,
+      padding: "16px 20px", opacity, transform: `translateY(${y}px)`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ width: 46, height: 46, borderRadius: 10, background: "rgba(10,31,63,0.08)",
+          color: THEME.navy, fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 15,
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.ini}</div>
+        <div style={{ fontFamily: THEME.fontBody, fontWeight: 600, fontSize: 16, color: THEME.navy }}>{c.nome}</div>
       </div>
-      <Metric value={client.sims} label={client.sims === 1 ? "SIMULAÇÃO" : "SIMULAÇÕES"} />
-      <Metric value={client.groups} label={client.groups === 1 ? "GRUPO" : "GRUPOS"} />
-      <div
-        style={{
-          padding: "12px 20px",
-          borderRadius: 10,
-          border: `1px solid ${THEME.line}`,
-          fontFamily: THEME.fontDisplay,
-          fontWeight: 700,
-          fontSize: 12.5,
-          letterSpacing: 0.6,
-          color: THEME.blue,
-          flexShrink: 0,
-        }}
-      >
-        {DATA.rowBtn}
+      <Metric value={c.sims} label={c.sims === 1 ? "simulação" : "simulações"} />
+      <Metric value={c.grupos} label={c.grupos === 1 ? "grupo" : "grupos"} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 999,
+        background: "rgba(10,31,63,0.04)", color: THEME.muted, fontFamily: THEME.fontBody, fontWeight: 600,
+        fontSize: 11, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        {DATA.cta}<span style={{ width: 14, height: 14, display: "flex" }}><Ic d={ICON.chevron} size={14} /></span>
       </div>
     </div>
   );
@@ -142,220 +74,78 @@ const ClientRow = ({ client, index }) => {
 
 export const Cena1Clientes = () => {
   const frame = useCurrentFrame();
-  const banner = useEnter(6);
-  const tag = useEnter(16);
-  const title = useEnter(22, 22);
-  const sub = useEnter(28);
-  const btns = useEnter(32);
-  const search = useEnter(44);
+  const beta = useEnter(6);
+  const eb = useEnter(16);
+  const title = useEnter(22, 20);
+  const desc = useEnter(28);
+  const actions = useEnter(30);
+  const search = useEnter(42);
 
-  const countRaw = useCountUp(DATA.count, 50, 22);
-  const count = Math.round(countRaw);
-  // realce (herói) do badge de contagem em azul do produto
-  const badgePulse = interpolate(frame, [72, 84, 100], [0, 1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const count = Math.round(useCountUp(DATA.count, 52, 22));
+  const badgePulse = interpolate(frame, [74, 86, 104], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: THEME.pageBg }}>
       <AppShell breadcrumb={DATA.breadcrumb}>
-        {/* Banner de aviso */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            background: ORANGE_SOFT,
-            border: `1px solid ${ORANGE}33`,
-            borderRadius: 12,
-            padding: "12px 18px",
-            opacity: banner.opacity,
-            transform: `translateY(${banner.y}px)`,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: THEME.fontDisplay,
-              fontWeight: 800,
-              fontSize: 11,
-              letterSpacing: 0.7,
-              color: "#fff",
-              background: ORANGE,
-              padding: "5px 10px",
-              borderRadius: 7,
-              flexShrink: 0,
-            }}
-          >
-            {DATA.bannerStrong}
+        {/* banner beta */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: THEME.betaBg,
+          border: `1px solid ${THEME.betaBorder}`, borderRadius: 10, padding: "10px 14px",
+          opacity: beta.opacity, transform: `translateY(${beta.y}px)` }}>
+          <div style={{ fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em",
+            color: THEME.betaBadgeText, background: THEME.betaBadgeBg, padding: "4px 10px", borderRadius: 7, flexShrink: 0 }}>
+            {DATA.betaBadge}
           </div>
-          <div style={{ fontFamily: THEME.fontBody, fontSize: 14.5, color: "#8A5A22" }}>
-            {DATA.banner}
+          <div style={{ fontFamily: THEME.fontBody, fontSize: 13.5, color: "#7A6524", lineHeight: 1.4 }}>{DATA.betaText}</div>
+        </div>
+
+        {/* header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 26 }}>
+          <div style={{ maxWidth: 940 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, opacity: eb.opacity, transform: `translateY(${eb.y}px)` }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: THEME.ciano }} />
+              <span style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 12, letterSpacing: "0.12em",
+                textTransform: "uppercase", color: THEME.muted }}>{DATA.eyebrow}</span>
+            </div>
+            <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 42, letterSpacing: "-0.03em",
+              color: THEME.navy, marginTop: 14, lineHeight: 1.08, opacity: title.opacity, transform: `translateY(${title.y}px)` }}>
+              {DATA.titleA}
+              <span style={{ fontFamily: THEME.fontSerif, fontStyle: "italic", fontWeight: 400 }}>{DATA.titleAccent}</span>
+              {DATA.titleB}
+            </div>
+            <div style={{ fontFamily: THEME.fontBody, fontSize: 16, color: THEME.muted, marginTop: 12,
+              opacity: desc.opacity, transform: `translateY(${desc.y}px)` }}>{DATA.desc}</div>
+          </div>
+          <div style={{ display: "flex", gap: 12, opacity: actions.opacity, transform: `translateY(${actions.y}px)`, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "13px 20px", borderRadius: 10,
+              border: `1px solid ${THEME.border}`, color: THEME.navy, fontFamily: THEME.fontBody, fontWeight: 600, fontSize: 14 }}>
+              <span style={{ width: 16, height: 16, display: "flex", color: THEME.muted }}><Ic d={ICON.sheet} size={16} /></span>{DATA.btnGhost}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "13px 22px", borderRadius: 10,
+              background: THEME.ciano, color: THEME.navy, fontFamily: THEME.fontBody, fontWeight: 600, fontSize: 14,
+              boxShadow: "0 10px 30px -10px rgba(0,212,255,0.7)" }}>
+              <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>{DATA.btnPrimary}
+            </div>
           </div>
         </div>
 
-        {/* Card principal */}
-        <div
-          style={{
-            marginTop: 24,
-            background: THEME.surface,
-            borderRadius: 20,
-            border: `1px solid ${THEME.line}`,
-            boxShadow: "0 24px 60px -30px rgba(3,10,139,0.18)",
-            padding: "36px 40px",
-          }}
-        >
-          {/* Header: tag + título + botões */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ maxWidth: 900 }}>
-              <div
-                style={{
-                  display: "inline-block",
-                  fontFamily: THEME.fontDisplay,
-                  fontWeight: 800,
-                  fontSize: 12,
-                  letterSpacing: 0.9,
-                  color: THEME.blue,
-                  background: "#EDEFFB",
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  opacity: tag.opacity,
-                  transform: `translateY(${tag.y}px)`,
-                }}
-              >
-                {DATA.tag}
-              </div>
-              <div
-                style={{
-                  fontFamily: THEME.fontDisplay,
-                  fontWeight: 800,
-                  fontSize: 40,
-                  color: THEME.ink,
-                  marginTop: 16,
-                  lineHeight: 1.15,
-                  opacity: title.opacity,
-                  transform: `translateY(${title.y}px)`,
-                }}
-              >
-                {DATA.titleParts.map((p, i) => (
-                  <span key={i} style={{ fontStyle: p.i ? "italic" : "normal" }}>
-                    {p.t}
-                  </span>
-                ))}
-              </div>
-              <div
-                style={{
-                  fontFamily: THEME.fontBody,
-                  fontSize: 16,
-                  color: THEME.muted,
-                  marginTop: 12,
-                  opacity: sub.opacity,
-                  transform: `translateY(${sub.y}px)`,
-                }}
-              >
-                {DATA.subtitle}
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                opacity: btns.opacity,
-                transform: `translateY(${btns.y}px)`,
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  padding: "13px 22px",
-                  borderRadius: 11,
-                  background: THEME.ink,
-                  color: "#fff",
-                  fontFamily: THEME.fontDisplay,
-                  fontWeight: 700,
-                  fontSize: 14,
-                }}
-              >
-                {DATA.btnGhost}
-              </div>
-              <div
-                style={{
-                  padding: "13px 22px",
-                  borderRadius: 11,
-                  background: THEME.blue,
-                  color: "#fff",
-                  fontFamily: THEME.fontDisplay,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  boxShadow: "0 10px 24px -10px rgba(12,39,232,0.6)",
-                }}
-              >
-                {DATA.btnPrimary}
-              </div>
-            </div>
+        {/* toolbar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 28,
+          opacity: search.opacity, transform: `translateY(${search.y}px)` }}>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: THEME.surface,
+            border: `1px solid ${THEME.border}`, borderRadius: 10, padding: "13px 16px" }}>
+            <span style={{ width: 18, height: 18, display: "flex", color: THEME.muted }}><Ic d={ICON.search} size={18} /></span>
+            <span style={{ fontFamily: THEME.fontBody, fontSize: 15, color: THEME.muted }}>{DATA.searchPlaceholder}</span>
           </div>
+          <div style={{ fontFamily: THEME.fontBody, fontWeight: 600, fontSize: 13, color: THEME.navy,
+            background: THEME.surface, border: `1px solid ${THEME.cardBorder}`, padding: "11px 16px", borderRadius: 7,
+            fontVariantNumeric: "tabular-nums", boxShadow: `0 0 0 ${3 * badgePulse}px rgba(0,212,255,${0.35 * badgePulse})` }}>
+            {count} clientes
+          </div>
+        </div>
 
-          {/* Busca + badge de contagem */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              marginTop: 30,
-              opacity: search.opacity,
-              transform: `translateY(${search.y}px)`,
-            }}
-          >
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                border: `1px solid ${THEME.line}`,
-                borderRadius: 12,
-                padding: "14px 18px",
-                background: "#FBFCFE",
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={THEME.muted} strokeWidth="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-3.2-3.2" />
-              </svg>
-              <div style={{ fontFamily: THEME.fontBody, fontSize: 15, color: THEME.muted }}>
-                {DATA.searchPlaceholder}
-              </div>
-            </div>
-            <div
-              style={{
-                fontFamily: THEME.fontDisplay,
-                fontWeight: 800,
-                fontSize: 14,
-                color: THEME.blue,
-                background: "#EDEFFB",
-                padding: "12px 18px",
-                borderRadius: 11,
-                fontVariantNumeric: "tabular-nums",
-                boxShadow: `0 0 0 ${3 * badgePulse}px rgba(12,39,232,${0.25 * badgePulse})`,
-              }}
-            >
-              {count} clientes
-            </div>
-          </div>
-
-          {/* Lista */}
-          <div
-            style={{
-              marginTop: 20,
-              border: `1px solid ${THEME.line}`,
-              borderRadius: 14,
-              overflow: "hidden",
-            }}
-          >
-            {DATA.clients.map((c, i) => (
-              <ClientRow key={c.initials} client={c} index={i} />
-            ))}
-          </div>
+        {/* lista */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 18 }}>
+          {DATA.clients.map((c, i) => <ClientCard key={c.ini} c={c} index={i} />)}
         </div>
       </AppShell>
     </AbsoluteFill>

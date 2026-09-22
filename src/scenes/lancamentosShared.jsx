@@ -1,378 +1,271 @@
 /**
- * Base compartilhada das Cenas 3 e 4 — tela "Lançamentos e notas" (2027).
+ * Base das Cenas 3 e 4 — aba "Lançamentos e notas" do editor de simulação.
+ * Recriada fiel a MvpSimulacaoEditorPage.tsx (blueaccount-ai): premissas do
+ * cenário, abas do editor, seção Receitas com totais, tabela de 9 colunas
+ * (Descrição · Valor informado · Valor bruto · IBS % · CBS % · IBS R$ · CBS R$ ·
+ * Líquido) e o drawer de linha com as 6 abas reais.
  *
- * A mesma tela serve às duas cenas; muda só o foco e o drawer:
- *   - Cena 3: foco em Receitas + drawer "Classificação fiscal" (linha exportação).
- *   - Cena 4: foco nas colunas de crédito / Custos + drawer "Tratamento fiscal"
- *             e "Impostos da linha" (linha Manteiga).
- *
- * Só os valores confirmados por print (Receitas e os totais) recebem contagem
- * em destaque. As 8 linhas de Custos Diretos são aproximadas (Anexo A) — a seção
- * aparece resumida, sem close nos dígitos.
+ * Cena 3: foco Receitas + drawer "Classificação fiscal" (linha exportação).
+ * Cena 4: foco Custos/créditos + drawer "Tratamento fiscal" (linha Manteiga).
+ * Dados do Anexo A; percentuais em pt-BR (vírgula).
  */
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { THEME, brl, pct } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
-import { AppShell, SegmentedTabs } from "../ui/AppShell";
+import { AppShell, SegmentedTabs, Ic, ICON } from "../ui/AppShell";
 
 export const LANC = {
-  breadcrumb: ["SIMULAÇÕES", "VÉRTICE DISTRIBUIDORA ATACADISTA L…", "NOTAS"],
-  premissas: "2027 · MG · IBS 0,10% · CBS 9,20%",
-  tabs: ["RESULTADO", "LANÇAMENTOS E NOTAS", "FLUXO DE CAIXA"],
-  cols: ["DESCRIÇÃO", "VALOR INFORMADO", "VALOR BRUTO", "IBS %", "CBS %", "IBS R$", "CBS R$", "LÍQUIDO"],
+  breadcrumb: ["Simulações", "VÉRTICE DISTRIBUIDORA ATACADISTA LTDA.", "NOTAS"],
+  eyebrow: "Simulação · reforma tributária IBS/CBS/ICMS/ISS",
+  premissasLabel: "Premissas do cenário",
+  premissas: ["2027", "MG", "IBS 0,10%", "CBS 9,20%"],
+  tabs: ["Resultado", "Lançamentos e notas", "Fluxo de caixa"],
+  cols: ["Descrição", "Valor informado", "Valor bruto", "IBS %", "CBS %", "IBS R$", "CBS R$", "Líquido"],
   receitas: [
-    { desc: "Massa alimentícia recheada para exportação", informado: 400000, bruto: 400000, ibsPct: 0, cbsPct: 0, ibsRs: 0, cbsRs: 0, liquido: 400000, tag: { label: "EXPORTAÇÃO · SEM DÉBITO", tone: "green" } },
-    { desc: "Pão de forma", informado: 300000, bruto: 311160, ibsPct: 0.04, cbsPct: 3.68, ibsRs: 120, cbsRs: 11040, liquido: 279000, tag: { label: "CESTA BÁSICA · 40%", tone: "blue" } },
-    { desc: "Manteiga - cesta básica", informado: 380000, bruto: 380000, ibsPct: 0, cbsPct: 0, ibsRs: 0, cbsRs: 0, liquido: 311600, tag: { label: "CESTA BÁSICA · 40%", tone: "blue" } },
-    { desc: "Extrato de tomate", informado: 240000, bruto: 248928, ibsPct: 0.04, cbsPct: 3.68, ibsRs: 96, cbsRs: 8832, liquido: 196800, tag: { label: "CESTA BÁSICA · 40%", tone: "blue" } },
-    { desc: "Salmão fresco refrigerado", informado: 150000, bruto: 163950, ibsPct: 0.1, cbsPct: 9.2, ibsRs: 150, cbsRs: 13800, liquido: 123000, tag: { label: "TRIBUTAÇÃO INTEGRAL", tone: "red" } },
-    { desc: "Refrigerante", informado: 110000, bruto: 120230, ibsPct: 0.1, cbsPct: 9.2, ibsRs: 110, cbsRs: 10120, liquido: 90200, tag: { label: "TRIBUTAÇÃO INTEGRAL", tone: "red" } },
+    { desc: "Massa alimentícia recheada para exportação", inf: 400000, bruto: 400000, ibsP: 0, cbsP: 0, ibs: 0, cbs: 0, liq: 400000, tag: { t: "Exportação · sem débito", tone: "green" } },
+    { desc: "Pão de forma", inf: 300000, bruto: 311160, ibsP: 0.04, cbsP: 3.68, ibs: 120, cbs: 11040, liq: 279000, tag: { t: "Cesta básica · 40%", tone: "cyan" } },
+    { desc: "Manteiga - cesta básica", inf: 380000, bruto: 380000, ibsP: 0, cbsP: 0, ibs: 0, cbs: 0, liq: 311600, tag: { t: "Cesta básica · 40%", tone: "cyan" } },
+    { desc: "Extrato de tomate", inf: 240000, bruto: 248928, ibsP: 0.04, cbsP: 3.68, ibs: 96, cbs: 8832, liq: 196800, tag: { t: "Cesta básica · 40%", tone: "cyan" } },
+    { desc: "Salmão fresco refrigerado", inf: 150000, bruto: 163950, ibsP: 0.1, cbsP: 9.2, ibs: 150, cbs: 13800, liq: 123000, tag: { t: "Tributação integral", tone: "red" } },
+    { desc: "Refrigerante", inf: 110000, bruto: 120230, ibsP: 0.1, cbsP: 9.2, ibs: 110, cbs: 10120, liq: 90200, tag: { t: "Tributação integral", tone: "red" } },
   ],
-  receitasTotais: { informado: 1580000, bruto: 1624268, carga: 223668, das: 0, liquido: 1400600 },
-  custosTotais: { informado: 775000, bruto: 834985, carga: 0, creditos: 135585, liquido: 699400 },
-  // Conteúdo dos drawers (valores confirmados no Anexo A)
+  receitasTot: [
+    { l: "Total informado", v: 1580000 },
+    { l: "Total bruto", v: 1624268 },
+    { l: "Carga tributária", v: 223668 },
+    { l: "DAS aplicado", v: 0 },
+    { l: "Total líquido", v: 1400600, strong: true },
+  ],
+  custosTot: [
+    { l: "Total informado", v: 775000 },
+    { l: "Total bruto", v: 834985 },
+    { l: "Créditos recuperados", v: 135585, tone: "green" },
+    { l: "Total líquido", v: 699400, strong: true },
+  ],
   drawerTabs: ["Resumo da linha", "Classificação fiscal", "Partes envolvidas", "Base de cálculo", "Tratamento fiscal", "Impostos da linha"],
-  classificacao: [
-    { k: "NCM", v: "1902.20.00" },
-    { k: "CST ICMS", v: "40 · Isenta" },
-    { k: "CFOP", v: "7102" },
-    { k: "NBS", v: "—" },
-  ],
-  tratamento: [
-    { k: "IBS", v: "Cheia 0,10% · efetiva 0,04%" },
-    { k: "CBS", v: "Cheia 9,20% · efetiva 3,68%" },
-    { k: "Fator IBS/CBS", v: "40% / 40%" },
-    { k: "Crédito IBS/CBS", v: "Integral", tone: "green" },
-    { k: "ICMS", v: "Gera crédito · alíquota 12,00%" },
-    { k: "Crédito ICMS", v: "Integral", tone: "green" },
-  ],
-  impostos: [
-    { k: "IBS", v: "R$ 36,00", c: "crédito R$ 36,00" },
-    { k: "CBS", v: "R$ 3.312,00", c: "crédito R$ 3.312,00" },
-    { k: "ICMS", v: "R$ 10.800,00", c: "crédito R$ 10.800,00" },
-    { k: "ISS / DIFAL", v: "R$ 0,00", c: "—" },
-  ],
+  classificacao: {
+    titulo: "Natureza do produto",
+    campos: [
+      { k: "NCM", v: "1902.20.00" },
+      { k: "CST ICMS", v: "40 — Isenta" },
+      { k: "CFOP", v: "7102" },
+      { k: "Natureza do CFOP", v: "Exportação" },
+      { k: "NBS", v: "—" },
+    ],
+  },
+  tratamento: {
+    blocoA: { titulo: "IBS e CBS", campos: [
+      { k: "Fator de IBS", v: "40%" },
+      { k: "Fator de CBS", v: "40%" },
+      { k: "Fornecedor IBS/CBS", v: "Padrão" },
+      { k: "Crédito IBS/CBS", v: "Integral", tone: "green" },
+    ] },
+    blocoB: { titulo: "ICMS e ISS", campos: [
+      { k: "Tratamento ICMS", v: "Gera crédito", tone: "green" },
+      { k: "Alíquota ICMS", v: "12,00%" },
+      { k: "Alíquota ISS", v: "—" },
+      { k: "Regra crédito ICMS", v: "Integral" },
+    ] },
+  },
 };
 
-const COL_FLEX = [2.6, 1.2, 1.2, 0.7, 0.7, 1.0, 1.0, 1.2];
+const GRID = "2.6fr 1.1fr 1.1fr 0.7fr 0.7fr 0.9fr 0.9fr 1fr 44px";
 
-const toneColor = (tone) =>
-  tone === "green" ? THEME.green : tone === "red" ? THEME.red : THEME.blue;
-const toneSoft = (tone) =>
-  tone === "green" ? "rgba(23,163,74,0.10)" : tone === "red" ? "rgba(224,70,58,0.10)" : "#EDEFFB";
+const toneColor = (t) => (t === "green" ? THEME.green : t === "red" ? THEME.red : THEME.navy);
+const toneBg = (t) => (t === "green" ? "rgba(22,163,74,0.10)" : t === "red" ? "rgba(220,38,38,0.10)" : THEME.cianoSoft);
 
-const TagChip = ({ tag, appear }) => {
+const Tag = ({ tag, appear }) => {
   const { opacity } = useEnter(appear);
   return (
-    <span
-      style={{
-        display: "inline-block",
-        marginTop: 5,
-        fontFamily: THEME.fontDisplay,
-        fontWeight: 800,
-        fontSize: 10.5,
-        letterSpacing: 0.5,
-        color: toneColor(tag.tone),
-        background: toneSoft(tag.tone),
-        padding: "3px 8px",
-        borderRadius: 6,
-        opacity,
-      }}
-    >
-      {tag.label}
+    <span style={{ display: "inline-block", marginTop: 5, fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 10,
+      letterSpacing: "0.02em", color: toneColor(tag.tone), background: toneBg(tag.tone), padding: "2px 8px", borderRadius: 6, opacity }}>
+      {tag.t}
     </span>
   );
 };
 
-const num = (color, strong = true, size = 15) => ({
-  fontFamily: THEME.fontBody,
-  fontWeight: strong ? 800 : 600,
-  fontSize: size,
-  color,
-  fontVariantNumeric: "tabular-nums",
-});
+const calc = (v) => ({ fontFamily: THEME.fontMono, fontWeight: 500, fontSize: 12.5, color: THEME.muted,
+  fontVariantNumeric: "tabular-nums", textAlign: "right" });
 
-/* Uma linha de lançamento com contagem dos valores confirmados. */
-const LancRow = ({ row, index, appear, highlightCredit, calloutPulse }) => {
+const Row = ({ row, index, appear, creditFocus, storyPulse }) => {
   const { opacity, y } = useEnter(appear);
-  const informado = useCountUp(row.informado, appear + 4, 20);
+  const inf = useCountUp(row.inf, appear + 4, 20);
   const bruto = useCountUp(row.bruto, appear + 6, 20);
-  const ibsRs = useCountUp(row.ibsRs, appear + 8, 20);
-  const cbsRs = useCountUp(row.cbsRs, appear + 8, 20);
-  const liquido = useCountUp(row.liquido, appear + 10, 20);
-
-  const creditBg = highlightCredit ? `rgba(23,163,74,${0.10 * highlightCredit})` : "transparent";
-  const rowGlow = calloutPulse
-    ? `inset 3px 0 0 ${toneColor(row.tag?.tone)}`
-    : "none";
+  const ibs = useCountUp(row.ibs, appear + 8, 20);
+  const cbs = useCountUp(row.cbs, appear + 8, 20);
+  const liq = useCountUp(row.liq, appear + 10, 20);
+  const creditBg = creditFocus ? `rgba(0,212,255,${0.10 * creditFocus})` : "transparent";
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        padding: "11px 22px",
-        borderTop: index === 0 ? "none" : `1px solid ${THEME.line}`,
-        opacity,
-        transform: `translateY(${y}px)`,
-        background: calloutPulse ? `${toneSoft(row.tag?.tone)}` : "transparent",
-        boxShadow: rowGlow,
-      }}
-    >
-      <div style={{ flex: COL_FLEX[0] }}>
-        <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 600, fontSize: 15.5, color: THEME.ink }}>
-          {row.desc}
-        </div>
-        {row.tag && <TagChip tag={row.tag} appear={appear + 16} />}
+    <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 6, alignItems: "center", padding: "8px 16px",
+      borderTop: index === 0 ? "none" : `1px solid ${THEME.hairline}`, opacity, transform: `translateY(${y}px)`,
+      background: storyPulse ? `rgba(0,212,255,${0.10 * storyPulse})` : "transparent" }}>
+      <div>
+        <div style={{ fontFamily: THEME.fontBody, fontWeight: 500, fontSize: 14.5, color: THEME.navy }}>{row.desc}</div>
+        {row.tag && <Tag tag={row.tag} appear={appear + 14} />}
       </div>
-      <div style={{ flex: COL_FLEX[1], textAlign: "right", ...num(THEME.body, false) }}>{brl(informado)}</div>
-      <div style={{ flex: COL_FLEX[2], textAlign: "right", ...num(THEME.ink) }}>{brl(bruto)}</div>
-      <div style={{ flex: COL_FLEX[3], textAlign: "right", ...num(THEME.muted, false) }}>{pct(row.ibsPct)}</div>
-      <div style={{ flex: COL_FLEX[4], textAlign: "right", ...num(THEME.muted, false) }}>{pct(row.cbsPct)}</div>
-      <div style={{ flex: COL_FLEX[5], textAlign: "right", borderRadius: 6, background: creditBg, ...num(THEME.green) }}>{brl(ibsRs)}</div>
-      <div style={{ flex: COL_FLEX[6], textAlign: "right", borderRadius: 6, background: creditBg, ...num(THEME.green) }}>{brl(cbsRs)}</div>
-      <div style={{ flex: COL_FLEX[7], textAlign: "right", ...num(THEME.ink) }}>{brl(liquido)}</div>
+      <div style={calc()}>{brl(inf)}</div>
+      <div style={calc()}>{brl(bruto)}</div>
+      <div style={{ ...calc(), color: THEME.muted }}>{pct(row.ibsP)}</div>
+      <div style={{ ...calc(), color: THEME.muted }}>{pct(row.cbsP)}</div>
+      <div style={{ ...calc(), background: creditBg, borderRadius: 5 }}>{brl(ibs)}</div>
+      <div style={{ ...calc(), background: creditBg, borderRadius: 5 }}>{brl(cbs)}</div>
+      <div style={{ textAlign: "right" }}>
+        <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-end", background: THEME.cianoSoft,
+          padding: "5px 9px", borderRadius: 6 }}>
+          <span style={{ fontFamily: THEME.fontMono, fontSize: 8, letterSpacing: "0.06em", textTransform: "uppercase", color: THEME.navy, opacity: 0.68 }}>Total da linha</span>
+          <span style={{ fontFamily: THEME.fontMono, fontWeight: 700, fontSize: 12.5, color: THEME.navy, fontVariantNumeric: "tabular-nums" }}>{brl(liq)}</span>
+        </span>
+      </div>
+      <div style={{ justifySelf: "center", color: "#CBD5E1", display: "flex" }}><Ic d={ICON.chevron} size={15} /></div>
     </div>
   );
 };
 
-/* Drawer inline (acordeão) sob uma linha. */
-const Drawer = ({ open, start, activeTab, content }) => {
+const KV = ({ campo, appear, start }) => {
   const frame = useCurrentFrame();
-  const t = interpolate(frame, [start, start + 16], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  if (!open) return null;
-  const H = 210;
+  const t = interpolate(frame, [start, start + 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
-    <div style={{ height: H * t, overflow: "hidden", opacity: t }}>
-      <div style={{ background: "#F7F8FB", borderTop: `1px solid ${THEME.line}`, padding: "18px 24px" }}>
-        {/* Abas do drawer */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, opacity: t, borderBottom: `1px solid ${THEME.hairline}`, paddingBottom: 8 }}>
+      <span style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: THEME.muted }}>{campo.k}</span>
+      <span style={{ fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 14.5, color: campo.tone === "green" ? THEME.green : THEME.navy }}>{campo.v}</span>
+    </div>
+  );
+};
+
+const DrawerBlock = ({ titulo, campos, start, cols = 2 }) => (
+  <div>
+    <div style={{ fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 12, letterSpacing: "0.04em", textTransform: "uppercase",
+      color: THEME.muted, marginBottom: 12 }}>{titulo}</div>
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: "14px 32px" }}>
+      {campos.map((c, i) => <KV key={c.k} campo={c} start={start + i * 3} />)}
+    </div>
+  </div>
+);
+
+const Drawer = ({ start, activeTab, content }) => {
+  const frame = useCurrentFrame();
+  const t = interpolate(frame, [start, start + 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const H = content.kind === "tratamento" ? 210 : 200;
+  return (
+    <div style={{ height: H * t, overflow: "hidden", opacity: t, borderTop: `1px solid ${THEME.hairline}`, background: "#FBFCFE" }}>
+      <div style={{ padding: "16px 20px" }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
           {LANC.drawerTabs.map((tb, i) => {
             const active = i === activeTab;
             return (
-              <div
-                key={tb}
-                style={{
-                  fontFamily: THEME.fontDisplay,
-                  fontWeight: 700,
-                  fontSize: 12,
-                  padding: "7px 13px",
-                  borderRadius: 8,
-                  background: active ? THEME.surface : "transparent",
-                  color: active ? THEME.blue : THEME.muted,
-                  border: `1px solid ${active ? THEME.line : "transparent"}`,
-                  boxShadow: active ? "0 2px 8px rgba(3,10,139,0.08)" : "none",
-                }}
-              >
-                {tb}
-              </div>
+              <div key={tb} style={{ fontFamily: THEME.fontBody, fontWeight: 600, fontSize: 11.5, padding: "7px 12px", borderRadius: 8,
+                background: active ? THEME.cianoSoft : "transparent", color: active ? THEME.navy : THEME.muted,
+                border: `1px solid ${active ? "rgba(0,212,255,0.4)" : "transparent"}` }}>{tb}</div>
             );
           })}
         </div>
-        {/* Conteúdo em grade chave/valor */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 40px" }}>
-          {content.map((item, i) => {
-            const rowT = interpolate(frame, [start + 8 + i * 3, start + 20 + i * 3], [0, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            });
-            return (
-              <div key={item.k} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", opacity: rowT, borderBottom: `1px solid ${THEME.line}`, paddingBottom: 8 }}>
-                <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 13, color: THEME.muted, letterSpacing: 0.3 }}>{item.k}</span>
-                <span style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-                  <span style={{ fontFamily: THEME.fontBody, fontWeight: 800, fontSize: 15, color: item.tone === "green" ? THEME.green : THEME.ink, fontVariantNumeric: "tabular-nums" }}>{item.v}</span>
-                  {item.c && <span style={{ fontFamily: THEME.fontBody, fontSize: 12.5, color: THEME.green }}>{item.c}</span>}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        {content.kind === "classificacao" && (
+          <DrawerBlock titulo={LANC.classificacao.titulo} campos={LANC.classificacao.campos} start={start + 8} cols={3} />
+        )}
+        {content.kind === "tratamento" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 36 }}>
+            <DrawerBlock titulo={LANC.tratamento.blocoA.titulo} campos={LANC.tratamento.blocoA.campos} start={start + 8} cols={2} />
+            <DrawerBlock titulo={LANC.tratamento.blocoB.titulo} campos={LANC.tratamento.blocoB.campos} start={start + 12} cols={2} />
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const TotChip = ({ label, value, tone, appear }) => {
+const TotalBadge = ({ item, appear }) => {
   const { opacity, y } = useEnter(appear);
-  const counted = useCountUp(value, appear + 4, 22);
+  const v = useCountUp(item.v, appear + 4, 22);
   return (
-    <div style={{ opacity, transform: `translateY(${y}px)` }}>
-      <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 10.5, letterSpacing: 0.6, color: THEME.muted }}>{label}</div>
-      <div style={{ ...num(tone === "green" ? THEME.green : THEME.ink, true, 18), marginTop: 3 }}>{brl(counted)}</div>
+    <div style={{ minWidth: 128, opacity, transform: `translateY(${y}px)` }}>
+      <div style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 9.5, letterSpacing: "0.05em", textTransform: "uppercase", color: THEME.muted }}>{item.l}</div>
+      <div style={{ fontFamily: THEME.fontMono, fontWeight: 700, fontSize: 15, marginTop: 3,
+        color: item.tone === "green" ? THEME.green : THEME.navy, fontVariantNumeric: "tabular-nums" }}>{brl(v)}</div>
     </div>
   );
 };
 
-const SectionHeader = ({ label, count, appear, accent }) => {
+const SectionHeader = ({ label, count, totals, appear, totAppear }) => {
   const { opacity, y } = useEnter(appear);
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 22px", opacity, transform: `translateY(${y}px)` }}>
-      <div style={{ width: 8, height: 8, borderRadius: 3, background: accent || THEME.blue }} />
-      <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 17, color: THEME.ink }}>{label}</div>
-      {count != null && (
-        <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 12, color: THEME.muted, background: "#F1F3F8", padding: "3px 9px", borderRadius: 6 }}>{count}</div>
-      )}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px",
+      opacity, transform: `translateY(${y}px)`, gap: 24, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 15, color: THEME.navy }}>{label}</span>
+        {count != null && <span style={{ fontFamily: THEME.fontBody, fontSize: 12, color: THEME.muted }}>({count})</span>}
+      </div>
+      <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+        {totals.map((tt, i) => <TotalBadge key={tt.l} item={tt} appear={totAppear + i * 5} />)}
+      </div>
     </div>
   );
 };
 
-/**
- * Tela completa. Props:
- *  - focus: "receitas" | "custos"
- *  - drawerRow: índice da linha de Receitas onde o drawer abre (ou null)
- *  - drawerTabIndex, drawerContent
- *  - drawerStart, calloutStart, creditStart: frames de eventos
- */
-export const LancamentosScreen = ({
-  activeTab = 1,
-  focus = "receitas",
-  drawerRow = null,
-  drawerTabIndex = 1,
-  drawerContent = [],
-  drawerStart = 320,
-  calloutStart = 190,
-  creditStart = 999,
-}) => {
+export const LancamentosScreen = ({ focus = "receitas", drawerRow, drawerContent, drawerStart = 320, storyStart = 200, creditStart = 999 }) => {
   const frame = useCurrentFrame();
-  const premissas = useEnter(8);
-  const secHead = useEnter(24);
-
-  const calloutPulse = interpolate(frame, [calloutStart, calloutStart + 16], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const creditPulse = interpolate(frame, [creditStart, creditStart + 16], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  const rowsStart = 44;
-  const rowStep = 14;
+  const eb = useEnter(6);
+  const prem = useEnter(12);
+  const creditPulse = interpolate(frame, [creditStart, creditStart + 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const storyPulse = interpolate(frame, [storyStart, storyStart + 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: THEME.pageBg }}>
-      <AppShell breadcrumb={LANC.breadcrumb}>
-        {/* Premissas + abas */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", opacity: premissas.opacity, transform: `translateY(${premissas.y}px)` }}>
-          <SegmentedTabs tabs={LANC.tabs} activeIndex={activeTab} appear={12} />
-          <div
-            style={{
-              fontFamily: THEME.fontBody,
-              fontWeight: 700,
-              fontSize: 14,
-              color: THEME.ink,
-              background: THEME.surface,
-              border: `1px solid ${THEME.line}`,
-              padding: "10px 16px",
-              borderRadius: 10,
-              letterSpacing: 0.3,
-            }}
-          >
-            {LANC.premissas}
+      <AppShell breadcrumb={LANC.breadcrumb} contentPadding="26px 34px">
+        {/* eyebrow + premissas */}
+        <div style={{ opacity: eb.opacity, transform: `translateY(${eb.y}px)` }}>
+          <div style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: THEME.muted }}>{LANC.eyebrow}</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12,
+          opacity: prem.opacity, transform: `translateY(${prem.y}px)` }}>
+          <SegmentedTabs tabs={LANC.tabs} activeIndex={1} appear={14} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: THEME.surface, border: `1px solid ${THEME.cardBorder}`,
+            padding: "9px 16px", borderRadius: 10 }}>
+            <span style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: THEME.muted }}>{LANC.premissasLabel}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {LANC.premissas.map((p, i) => (
+                <React.Fragment key={p}>
+                  {i > 0 && <span style={{ color: THEME.muted, opacity: 0.5 }}>·</span>}
+                  <span style={{ fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 13, color: THEME.navy }}>{p}</span>
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Card da tabela */}
-        <div
-          style={{
-            marginTop: 20,
-            background: THEME.surface,
-            borderRadius: 18,
-            border: `1px solid ${THEME.line}`,
-            boxShadow: "0 24px 60px -30px rgba(3,10,139,0.18)",
-            overflow: "hidden",
-          }}
-        >
-          <SectionHeader label="Receitas" count={6} appear={24} accent={THEME.green} />
-
-          {/* Cabeçalho de colunas */}
-          <div style={{ display: "flex", padding: "10px 22px", background: "#F7F8FB", borderTop: `1px solid ${THEME.line}` }}>
+        {/* card tabela */}
+        <div style={{ marginTop: 18, background: THEME.surface, border: `1px solid ${THEME.cardBorder}`, borderRadius: 16,
+          boxShadow: THEME.cardShadow, overflow: "hidden" }}>
+          <SectionHeader label="Receitas" count={6} totals={LANC.receitasTot} appear={20} totAppear={150} />
+          {/* thead */}
+          <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 6, padding: "8px 16px", background: "#F8FAFC", borderTop: `1px solid ${THEME.hairline}` }}>
             {LANC.cols.map((c, i) => {
               const isCredit = i === 5 || i === 6;
               return (
-                <div
-                  key={c}
-                  style={{
-                    flex: COL_FLEX[i],
-                    textAlign: i === 0 ? "left" : "right",
-                    fontFamily: THEME.fontDisplay,
-                    fontWeight: 700,
-                    fontSize: 10.5,
-                    letterSpacing: 0.4,
-                    color: isCredit && creditPulse ? THEME.green : THEME.muted,
-                    borderRadius: 5,
-                    background: isCredit ? `rgba(23,163,74,${0.12 * creditPulse})` : "transparent",
-                  }}
-                >
-                  {c}
-                </div>
+                <div key={c} style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 10, letterSpacing: "0.06em",
+                  textTransform: "uppercase", color: isCredit && creditPulse ? THEME.navy : THEME.muted, textAlign: i === 0 ? "left" : "right",
+                  background: isCredit ? `rgba(0,212,255,${0.14 * creditPulse})` : "transparent", borderRadius: 5, padding: "1px 2px" }}>{c}</div>
               );
             })}
+            <div />
           </div>
-
-          {/* Linhas de Receitas + drawer */}
           {LANC.receitas.map((row, i) => {
-            const appear = rowsStart + i * rowStep;
-            const isCallout =
-              focus === "receitas" && (i === 0 || i === 4) ? calloutPulse : 0;
+            const appear = 42 + i * 12;
+            const isStory = focus === "receitas" && (i === 0 || i === 4) ? storyPulse : 0;
             return (
               <React.Fragment key={row.desc}>
-                <LancRow
-                  row={row}
-                  index={i}
-                  appear={appear}
-                  highlightCredit={focus === "custos" ? creditPulse : 0}
-                  calloutPulse={isCallout}
-                />
-                {drawerRow === i && (
-                  <Drawer
-                    open
-                    start={drawerStart}
-                    activeTab={drawerTabIndex}
-                    content={drawerContent}
-                  />
-                )}
+                <Row row={row} index={i} appear={appear} creditFocus={focus === "custos" ? creditPulse : 0} storyPulse={isStory} />
+                {drawerRow === i && <Drawer start={drawerStart} activeTab={drawerContent.kind === "classificacao" ? 1 : 4} content={drawerContent} />}
               </React.Fragment>
             );
           })}
-
-          {/* Totais de Receitas */}
-          <div style={{ display: "flex", gap: 40, padding: "18px 24px", background: "#FBFCFE", borderTop: `1px solid ${THEME.line}` }}>
-            <TotChip label="INFORMADO" value={LANC.receitasTotais.informado} appear={150} />
-            <TotChip label="BRUTO" value={LANC.receitasTotais.bruto} appear={156} />
-            <TotChip label="CARGA" value={LANC.receitasTotais.carga} appear={162} />
-            <TotChip label="DAS" value={LANC.receitasTotais.das} appear={168} />
-            <TotChip label="LÍQUIDO" value={LANC.receitasTotais.liquido} tone="green" appear={174} />
-          </div>
         </div>
 
-        {/* Custos Diretos — resumo (linhas individuais são aproximadas: sem close) */}
-        <div
-          style={{
-            marginTop: 16,
-            background: THEME.surface,
-            borderRadius: 18,
-            border: `1px solid ${focus === "custos" && creditPulse ? THEME.green : THEME.line}`,
-            boxShadow: focus === "custos" ? `0 0 0 ${2 * creditPulse}px rgba(23,163,74,${0.18 * creditPulse})` : "none",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <SectionHeader label="Custos Diretos" count="8 lançamentos" appear={focus === "custos" ? 30 : 60} accent={THEME.blue} />
-            <div style={{ fontFamily: THEME.fontBody, fontSize: 12, color: THEME.muted, paddingRight: 22 }}>
-              valores em conferência
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 40, padding: "16px 24px", background: "#FBFCFE", borderTop: `1px solid ${THEME.line}` }}>
-            <TotChip label="INFORMADO" value={LANC.custosTotais.informado} appear={focus === "custos" ? 46 : 70} />
-            <TotChip label="BRUTO" value={LANC.custosTotais.bruto} appear={focus === "custos" ? 52 : 76} />
-            <TotChip label="CRÉDITOS RECUPERADOS" value={LANC.custosTotais.creditos} tone="green" appear={focus === "custos" ? 58 : 82} />
-            <TotChip label="LÍQUIDO" value={LANC.custosTotais.liquido} appear={focus === "custos" ? 64 : 88} />
-          </div>
+        {/* Custos Diretos — resumo (linhas individuais aproximadas: sem close) */}
+        <div style={{ marginTop: 14, background: THEME.surface, border: `1px solid ${focus === "custos" && creditPulse ? "rgba(0,212,255,0.5)" : THEME.cardBorder}`,
+          borderRadius: 16, boxShadow: focus === "custos" ? `0 0 0 ${2 * creditPulse}px rgba(0,212,255,${0.16 * creditPulse})` : "none", overflow: "hidden" }}>
+          <SectionHeader label="Custos Diretos" count="8" totals={LANC.custosTot} appear={focus === "custos" ? 26 : 60} totAppear={focus === "custos" ? 40 : 70} />
         </div>
       </AppShell>
     </AbsoluteFill>
