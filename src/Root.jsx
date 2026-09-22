@@ -19,6 +19,7 @@ import { Cena3Lancamentos } from "./scenes/Cena3Lancamentos";
 import { Cena4Creditos } from "./scenes/Cena4Creditos";
 import { Cena6Comparacao } from "./scenes/Cena6Comparacao";
 import { Cena7FluxoCaixa } from "./scenes/Cena7FluxoCaixa";
+import { CardComps, CARD_DUR } from "./scenes/HookCard";
 import { Master, MASTER_DURATION, DURATIONS } from "./Master";
 
 const V = { fps: 30, width: 1920, height: 1080 };
@@ -91,6 +92,11 @@ export const RemotionRoot = () => {
         durationInFrames={DURATIONS.c7}
         {...V}
       />
+
+      {/* Cards de impacto (um antes de cada tela) */}
+      {CardComps.map((C, i) => (
+        <Composition key={i} id={`Card${i}`} component={C} durationInFrames={CARD_DUR} {...V} />
+      ))}
     </>
   );
 };

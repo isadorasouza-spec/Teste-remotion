@@ -163,6 +163,30 @@ Só os valores confirmados por print recebem contagem/close. Itens marcados como
 - **Locução:** sem narração gravada, foram usadas as durações piloto (seção 7). Com
   locução, sincronizar via `DURATIONS` em `Master.jsx`.
 
+## Cards de impacto (v5)
+
+Antes de cada tela entra um **card de impacto** no estilo da moldura de marca
+(fundo navy, radar ciano, frase grande centralizada em Space Grotesk com uma
+palavra em Instrument Serif itálica, sublinha em Inter e um traço ciano). Código
+em `src/scenes/HookCard.jsx` (componente `HookCard`, dados em `HOOKS`); duração
+`CARD_DUR = 84`. O `Master` intercala um card antes de cada segmento e o
+`RadarWipe` revela a tela.
+
+Frases (uma por tela):
+- Abertura: "E se você enxergasse o impacto da Reforma *antes* dele acontecer?"
+  (substitui a antiga tagline "Gestão contábil sem ponto cego"; a Abertura de
+  marca passou a exibir "Clareza na Reforma *Tributária*").
+- Cena 1: "Cada cliente vive uma Reforma *diferente*."
+- Cena 2: "Mesmo negócio, dois anos, duas *cargas* tributárias."
+- Cena 3: "Produtos parecidos, impostos bem *diferentes*."
+- Cena 4: "Nem todo custo vira *crédito*."
+- Cena 5: "Quanto sobra, quanto paga, quanto *recupera*."
+- Cena 6: "O ICMS cai de R$ 105 mil para R$ 94 mil. Onde a Reforma *alivia*?"
+- Cena 7: "Em que mês o caixa fica no *vermelho*?"
+
+Total do vídeo com os cards: 3812 frames (~2:07). Cada card é uma composição
+isolada no Studio (`Card0`..`Card7`).
+
 ## Animações da demo (v4)
 
 Ajustes de ritmo e novas animações (helpers em `src/ui/anim.jsx`: `CameraStage`,

@@ -19,6 +19,10 @@ import { Cena3Lancamentos } from "./scenes/Cena3Lancamentos";
 import { Cena4Creditos } from "./scenes/Cena4Creditos";
 import { Cena6Comparacao } from "./scenes/Cena6Comparacao";
 import { Cena7FluxoCaixa } from "./scenes/Cena7FluxoCaixa";
+import { HookCard, HOOKS, CARD_DUR } from "./scenes/HookCard";
+
+/* Um card de impacto por cena. */
+const card = (i) => ({ id: `card${i}`, component: () => <HookCard data={HOOKS[i]} />, dur: CARD_DUR });
 
 /* Durações piloto (frames @30fps). */
 export const DURATIONS = {
@@ -35,16 +39,16 @@ export const DURATIONS = {
 
 const WIPE = 20; // duração do RadarWipe
 
-/* Sequência ordenada de segmentos (id + componente + duração). */
+/* Sequência ordenada de segmentos: um card de impacto antecede cada tela. */
 const SEGMENTS = [
-  { id: "intro", component: IntroKontiva, dur: DURATIONS.intro },
-  { id: "c1", component: Cena1Clientes, dur: DURATIONS.c1 },
-  { id: "c2", component: Cena2Comparativo, dur: DURATIONS.c2 },
-  { id: "c3", component: Cena3Lancamentos, dur: DURATIONS.c3 },
-  { id: "c4", component: Cena4Creditos, dur: DURATIONS.c4 },
-  { id: "c5", component: KontivaResultado, dur: DURATIONS.c5 },
-  { id: "c6", component: Cena6Comparacao, dur: DURATIONS.c6 },
-  { id: "c7", component: Cena7FluxoCaixa, dur: DURATIONS.c7 },
+  card(0), { id: "intro", component: IntroKontiva, dur: DURATIONS.intro },
+  card(1), { id: "c1", component: Cena1Clientes, dur: DURATIONS.c1 },
+  card(2), { id: "c2", component: Cena2Comparativo, dur: DURATIONS.c2 },
+  card(3), { id: "c3", component: Cena3Lancamentos, dur: DURATIONS.c3 },
+  card(4), { id: "c4", component: Cena4Creditos, dur: DURATIONS.c4 },
+  card(5), { id: "c5", component: KontivaResultado, dur: DURATIONS.c5 },
+  card(6), { id: "c6", component: Cena6Comparacao, dur: DURATIONS.c6 },
+  card(7), { id: "c7", component: Cena7FluxoCaixa, dur: DURATIONS.c7 },
   { id: "outro", component: OutroKontiva, dur: DURATIONS.outro },
 ];
 

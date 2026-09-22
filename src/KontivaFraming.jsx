@@ -53,7 +53,7 @@ const BRAND = {
 const COPY = {
   eyebrow: "KONTIVA · REFORMA TRIBUTÁRIA",
   // tagline oficial; a palavra em <i> vai em Instrument Serif itálica
-  headline: ["Gestão contábil", "sem ponto", { i: "cego" }],
+  headline: ["Clareza na", "Reforma", { i: "Tributária" }],
   outroEyebrow: "KONTIVA.AI",
   outroLine: ["Veja o impacto", { i: "antes" }, "que ele aconteça."],
   outroCta: "Fale com a gente no WhatsApp",
