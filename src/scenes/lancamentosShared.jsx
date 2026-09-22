@@ -204,13 +204,14 @@ const SectionHeader = ({ label, count, totals, appear, totAppear }) => {
   );
 };
 
-/* Câmera de rolagem (Cena 3): um deslize CONTÍNUO de cima para baixo (um único
- * trecho longo, para não "travar" a cada linha), com zoom moderado que mantém a
- * coluna Descrição visível. cx ~1000. */
-const SCROLL_T = [0, 34, 250, 296, 520];
-const SCROLL_X = [1000, 1000, 1000, 960, 960];
-const SCROLL_Y = [280, 300, 700, 540, 540];
-const SCROLL_S = [1.18, 1.35, 1.35, 1.0, 1.0];
+/* Câmera de rolagem (Cena 3): deslize CONTÍNUO e LENTO de cima para baixo (um
+ * único trecho longo, sem "travar" a cada linha), com zoom moderado que mantém
+ * as linhas centralizadas e legíveis. Termina sobre as linhas/totais, sem cair
+ * no espaço em branco do rodapé. cx ~1000. */
+const SCROLL_T = [0, 50, 380, 520];
+const SCROLL_X = [960, 960, 960, 960];
+const SCROLL_Y = [300, 320, 460, 460];
+const SCROLL_S = [1.28, 1.45, 1.45, 1.45];
 
 /* Câmera da Cena 4 (cursor): identidade até o clique, depois zoom no drawer que
  * abre abaixo da Manteiga (menu "Tratamento fiscal"), segura e volta ao cheio. */
