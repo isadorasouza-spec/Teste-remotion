@@ -7,10 +7,11 @@
  * (perspective + translateZ), enquanto as outras recuam e escurecem.
  */
 import React from "react";
-import { AbsoluteFill, useCurrentFrame, interpolate, Easing } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { THEME } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
 import { AppShell, Ic, ICON } from "../ui/AppShell";
+import { Cursor, ClickRipple, useClickCursor } from "../ui/anim";
 
 const SELECTED = 4; // Vértice
 
@@ -46,7 +47,7 @@ const Metric = ({ value, label }) => (
 );
 
 const ClientCard = ({ c, index, sel }) => {
-  const appear = 70 + index * 13;
+  const appear = 46 + index * 9;
   const { opacity, y } = useEnter(appear);
   const isSel = index === SELECTED;
   // efeito 3D: selecionado avança (translateZ, escala, sombra, borda ciano); os demais recuam e escurecem
@@ -79,37 +80,23 @@ const ClientCard = ({ c, index, sel }) => {
   );
 };
 
-const Cursor = ({ x, y, press }) => (
-  <div style={{ position: "absolute", left: x - 6, top: y - 4, transform: `scale(${press})`, transformOrigin: "6px 4px",
-    zIndex: 50, pointerEvents: "none", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))" }}>
-    <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-      <path d="M5 3 L5 19 L9.4 15.1 L12.2 21 L14.8 19.9 L12 14.1 L18 14 Z" fill="#fff" stroke="#0A1F3F" strokeWidth="1.6" strokeLinejoin="round" />
-    </svg>
-  </div>
-);
-
 export const Cena1Clientes = () => {
   const frame = useCurrentFrame();
-  const beta = useEnter(6);
-  const eb = useEnter(16);
-  const title = useEnter(22, 20);
-  const desc = useEnter(28);
-  const actions = useEnter(30);
-  const search = useEnter(42);
+  const beta = useEnter(4);
+  const eb = useEnter(12);
+  const title = useEnter(16, 18);
+  const desc = useEnter(22);
+  const actions = useEnter(24);
+  const search = useEnter(34);
 
-  const count = Math.round(useCountUp(DATA.count, 52, 22));
+  const count = Math.round(useCountUp(DATA.count, 40, 16));
 
-  // cursor: entra ~150, desliza até a linha da Vértice, clica ~205
-  const ease = Easing.out(Easing.cubic);
-  const START = { x: 1360, y: 430 };
-  const TARGET = { x: 1784, y: 760 }; // botão "Ver simulações" da linha Vértice
-  const moveT = interpolate(frame, [150, 198], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
-  const cx = interpolate(moveT, [0, 1], [START.x, TARGET.x]);
-  const cy = interpolate(moveT, [0, 1], [START.y, TARGET.y]);
-  const cursorOp = interpolate(frame, [146, 158], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const press = interpolate(frame, [204, 209, 215], [1, 0.82, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const ripple = interpolate(frame, [206, 230], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const sel = interpolate(frame, [210, 244], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
+  // cursor: entra ~104, desliza rápido até a linha da Vértice, clica ~140
+  const cur = useClickCursor(frame, {
+    from: { x: 1360, y: 430 }, to: { x: 1784, y: 760 },
+    t0: 106, t1: 134, tClick: 140, appearAt: 100,
+  });
+  const sel = interpolate(frame, [144, 168], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: THEME.pageBg }}>
@@ -163,14 +150,8 @@ export const Cena1Clientes = () => {
         </div>
       </AppShell>
 
-      {/* ripple do clique */}
-      {ripple > 0 && ripple < 1 && (
-        <div style={{ position: "absolute", left: 1784, top: 760, width: 10, height: 10, borderRadius: "50%",
-          transform: `translate(-50%,-50%) scale(${1 + ripple * 7})`, border: `2px solid ${THEME.ciano}`, opacity: 1 - ripple, zIndex: 49, pointerEvents: "none" }} />
-      )}
-      {cursorOp > 0 && (
-        <div style={{ opacity: cursorOp }}><Cursor x={cx} y={cy} press={press} /></div>
-      )}
+      <ClickRipple x={1784} y={760} p={cur.ripple} />
+      {cur.opacity > 0 && <Cursor x={cur.x} y={cur.y} press={cur.press} opacity={cur.opacity} />}
     </AbsoluteFill>
   );
 };

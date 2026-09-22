@@ -44,13 +44,12 @@ const DATA = {
 const AP_FLEX = [1, 1.5, 1.2, 1.7, 1.2, 1.4];
 
 /* ---- câmera: centros (mundo, 1920x1080) dos 4 KPIs e keyframes ---- */
-const KPI_XY = [[511, 368], [897, 368], [1281, 368], [1665, 368]];
 const ZS = 2.05;
-const CAM_T = [0, 92, 112, 156, 176, 220, 240, 284, 304, 348, 372, 440];
+const CAM_T = [0, 66, 82, 114, 128, 160, 174, 206, 220, 252, 268, 380];
 const CAM_X = [960, 960, 511, 511, 897, 897, 1281, 1281, 1665, 1665, 960, 960];
 const CAM_Y = [540, 540, 368, 368, 368, 368, 368, 368, 368, 368, 540, 540];
 const CAM_S = [1, 1, ZS, ZS, ZS, ZS, ZS, ZS, ZS, ZS, 1, 1];
-const HOLDS = [[112, 156, 0], [176, 220, 1], [240, 284, 2], [304, 348, 3]];
+const HOLDS = [[82, 114, 0], [128, 160, 1], [174, 206, 2], [220, 252, 3]];
 
 const Kpi = ({ kpi, index, focusIndex, focusAmt }) => {
   const appear = 34 + index * 8;

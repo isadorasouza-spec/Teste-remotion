@@ -14,6 +14,7 @@ import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { THEME, brl, pct } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
 import { AppShell, SegmentedTabs, Ic, ICON } from "../ui/AppShell";
+import { CameraStage, Cursor, ClickRipple, useClickCursor, kf } from "../ui/anim";
 
 export const LANC = {
   breadcrumb: ["Simulações", "VÉRTICE DISTRIBUIDORA ATACADISTA LTDA.", "NOTAS"],
@@ -203,15 +204,38 @@ const SectionHeader = ({ label, count, totals, appear, totAppear }) => {
   );
 };
 
-export const LancamentosScreen = ({ focus = "receitas", drawerRow, drawerContent, drawerStart = 320, storyStart = 200, creditStart = 999 }) => {
+/* Câmera de rolagem (Cena 3): desce pela lista revelando linha a linha com zoom.
+ * cx ~1000 e zoom moderado (1.35) mantêm a coluna Descrição visível à esquerda. */
+const SCROLL_T = [0, 36, 70, 100, 128, 156, 184, 214, 250, 292, 520];
+const SCROLL_X = [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 960, 960];
+const SCROLL_Y = [300, 320, 352, 407, 462, 517, 572, 628, 700, 540, 540];
+const SCROLL_S = [1.22, 1.35, 1.35, 1.35, 1.35, 1.35, 1.35, 1.3, 1.2, 1.0, 1.0];
+
+export const LancamentosScreen = ({ mode = "scroll", focus = "receitas", drawerRow, drawerContent, drawerStart = 320, creditStart = 999 }) => {
   const frame = useCurrentFrame();
-  const eb = useEnter(6);
-  const prem = useEnter(12);
-  const creditPulse = interpolate(frame, [creditStart, creditStart + 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const storyPulse = interpolate(frame, [storyStart, storyStart + 16], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const eb = useEnter(4);
+  const prem = useEnter(8);
+  const creditPulse = interpolate(frame, [creditStart, creditStart + 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
+  // câmera
+  const scroll = mode === "scroll";
+  const cx = scroll ? kf(frame, SCROLL_T, SCROLL_X) : 960;
+  const cy = scroll ? kf(frame, SCROLL_T, SCROLL_Y) : 540;
+  const s = scroll ? kf(frame, SCROLL_T, SCROLL_S) : 1;
+
+  // timings de revelação das linhas por modo
+  const rowStart = scroll ? 34 : 24;
+  const rowStep = scroll ? 26 : 8;
+  const totAppearReceitas = scroll ? 200 : 60;
+
+  // cursor (Cena 4): clica nas colunas de crédito da linha Manteiga → abre o drawer
+  const cur = useClickCursor(frame, {
+    from: { x: 1300, y: 300 }, to: { x: 1560, y: 405 }, t0: 96, t1: 128, tClick: 134, appearAt: 92,
+  });
 
   return (
-    <AbsoluteFill style={{ background: THEME.pageBg }}>
+    <AbsoluteFill style={{ background: THEME.pageBg, overflow: "hidden" }}>
+      <CameraStage cx={cx} cy={cy} s={s}>
       <AppShell breadcrumb={LANC.breadcrumb} contentPadding="26px 34px">
         {/* eyebrow + premissas */}
         <div style={{ opacity: eb.opacity, transform: `translateY(${eb.y}px)` }}>
@@ -237,7 +261,7 @@ export const LancamentosScreen = ({ focus = "receitas", drawerRow, drawerContent
         {/* card tabela */}
         <div style={{ marginTop: 18, background: THEME.surface, border: `1px solid ${THEME.cardBorder}`, borderRadius: 16,
           boxShadow: THEME.cardShadow, overflow: "hidden" }}>
-          <SectionHeader label="Receitas" count={6} totals={LANC.receitasTot} appear={20} totAppear={150} />
+          <SectionHeader label="Receitas" count={6} totals={LANC.receitasTot} appear={16} totAppear={totAppearReceitas} />
           {/* thead */}
           <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 6, padding: "8px 16px", background: "#F8FAFC", borderTop: `1px solid ${THEME.hairline}` }}>
             {LANC.cols.map((c, i) => {
@@ -251,11 +275,11 @@ export const LancamentosScreen = ({ focus = "receitas", drawerRow, drawerContent
             <div />
           </div>
           {LANC.receitas.map((row, i) => {
-            const appear = 42 + i * 12;
-            const isStory = focus === "receitas" && (i === 0 || i === 4) ? storyPulse : 0;
+            const appear = rowStart + i * rowStep;
+            const hi = !scroll && i === 2 ? interpolate(frame, [132, 142, 260], [0, 1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) : 0;
             return (
               <React.Fragment key={row.desc}>
-                <Row row={row} index={i} appear={appear} creditFocus={focus === "custos" ? creditPulse : 0} storyPulse={isStory} />
+                <Row row={row} index={i} appear={appear} creditFocus={focus === "custos" ? creditPulse : 0} storyPulse={hi} />
                 {drawerRow === i && <Drawer start={drawerStart} activeTab={drawerContent.kind === "classificacao" ? 1 : 4} content={drawerContent} />}
               </React.Fragment>
             );
@@ -265,9 +289,16 @@ export const LancamentosScreen = ({ focus = "receitas", drawerRow, drawerContent
         {/* Custos Diretos — resumo (linhas individuais aproximadas: sem close) */}
         <div style={{ marginTop: 14, background: THEME.surface, border: `1px solid ${focus === "custos" && creditPulse ? "rgba(0,212,255,0.5)" : THEME.cardBorder}`,
           borderRadius: 16, boxShadow: focus === "custos" ? `0 0 0 ${2 * creditPulse}px rgba(0,212,255,${0.16 * creditPulse})` : "none", overflow: "hidden" }}>
-          <SectionHeader label="Custos Diretos" count="8" totals={LANC.custosTot} appear={focus === "custos" ? 26 : 60} totAppear={focus === "custos" ? 40 : 70} />
+          <SectionHeader label="Custos Diretos" count="8" totals={LANC.custosTot} appear={scroll ? 250 : 56} totAppear={scroll ? 262 : 66} />
         </div>
       </AppShell>
+      </CameraStage>
+      {mode === "cursor" && (
+        <>
+          <ClickRipple x={1560} y={405} p={cur.ripple} />
+          {cur.opacity > 0 && <Cursor x={cur.x} y={cur.y} press={cur.press} opacity={cur.opacity} />}
+        </>
+      )}
     </AbsoluteFill>
   );
 };

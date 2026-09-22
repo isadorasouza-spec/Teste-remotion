@@ -1,19 +1,14 @@
 /**
- * Cena 3 — Lançamentos e notas (2027), foco Receitas + drawer "Classificação
- * fiscal" da linha de exportação (NCM 1902.20.00, CST ICMS 40, CFOP 7102).
- * Bloco 1:00–2:00, 600 frames.
+ * Cena 3 — Lançamentos e notas (2027), foco Receitas. Bloco ~0:26–0:46.
+ * Animação (v4): a tela abre e a "câmera" rola para baixo com zoom, revelando
+ * as linhas de Receitas uma a uma (Massa, Pão, Manteiga, ...) até os totais e a
+ * seção Custos Diretos, depois volta ao enquadramento cheio.
  */
 import React from "react";
 import { LancamentosScreen } from "./lancamentosShared";
 
 export const Cena3Lancamentos = () => (
-  <LancamentosScreen
-    focus="receitas"
-    drawerRow={0}
-    drawerContent={{ kind: "classificacao" }}
-    drawerStart={360}
-    storyStart={200}
-  />
+  <LancamentosScreen mode="scroll" focus="receitas" drawerRow={null} />
 );
 
 export default Cena3Lancamentos;

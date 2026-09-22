@@ -163,6 +163,30 @@ Só os valores confirmados por print recebem contagem/close. Itens marcados como
 - **Locução:** sem narração gravada, foram usadas as durações piloto (seção 7). Com
   locução, sincronizar via `DURATIONS` em `Master.jsx`.
 
+## Animações da demo (v4)
+
+Ajustes de ritmo e novas animações (helpers em `src/ui/anim.jsx`: `CameraStage`,
+`Cursor`, `ClickRipple`, `useClickCursor`, `kf`):
+
+- **Velocidade:** todos os movimentos (cursores, zooms, travellings) ficaram
+  bem mais rápidos; durações das cenas reduzidas onde cabia.
+- **Cena 2 → Cena 3:** no fim da Cena 2 o cursor clica na simulação **"Notas"**
+  (com ripple e realce da linha), abrindo a tela de Lançamentos (Cena 3).
+- **Cena 3:** a tela abre e a câmera **rola para baixo com zoom**, revelando as
+  linhas de Receitas uma a uma (Massa, Pão, Manteiga, ...) até os totais e a
+  seção Custos, depois volta ao enquadramento cheio. (O drawer de Classificação
+  fiscal saiu da Cena 3 para não conflitar com a rolagem; a Classificação segue
+  disponível na base, mas não é aberta aqui.)
+- **Cena 4 (~0:38):** uma seta do mouse clica nas **colunas de crédito (IBS R$/
+  CBS R$, grifadas em azul) da linha Manteiga** e só então abre o drawer
+  "Tratamento fiscal".
+- **Cena 6:** câmera dá **zoom em cada um dos 5 KPIs** (Cenários na série, Base
+  tributável, ...), depois enquadra o **Comparativo anual** deslizando pelas
+  colunas, e **rola para baixo** destacando o **Resumo do fluxo de caixa**.
+
+Durações v4 (frames): c1 240 · c2 250 · c3 520 · c4 500 · c5 380 · c6 620 · c7 380.
+Total 3140 frames (~1:45).
+
 ## Animações da demo (v3)
 
 Camada extra de movimento, mantendo a interface real:

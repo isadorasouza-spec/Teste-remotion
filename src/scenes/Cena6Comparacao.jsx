@@ -11,6 +11,7 @@ import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } fr
 import { THEME, brl } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
 import { AppShell, SegmentedTabs, Ic, ICON } from "../ui/AppShell";
+import { CameraStage, kf } from "../ui/anim";
 
 const CIANO = "#00D4FF";
 
@@ -57,14 +58,17 @@ const DATA = {
 const CASH_FLEX = [0.7, 1.6, 1.5, 1.5, 1.5];
 const signedBrl = (n) => (n < 0 ? `-${brl(Math.abs(n))}` : brl(n));
 
-const Kpi = ({ kpi, index }) => {
-  const appear = 30 + index * 8;
+const Kpi = ({ kpi, index, focusIndex, focusAmt }) => {
+  const appear = 24 + index * 7;
   const { opacity, y } = useEnter(appear);
-  const counted = useCountUp(kpi.value, appear + 4, 24);
+  const counted = useCountUp(kpi.value, appear + 4, 22);
   const display = kpi.kind === "int" ? String(Math.round(counted)) : brl(counted);
+  const dim = focusIndex !== -1 && focusIndex !== index ? focusAmt * 0.62 : 0;
+  const up = focusIndex === index ? focusAmt : 0;
   return (
-    <div style={{ flex: 1, background: THEME.pageBg, borderRadius: 10, border: "1px solid rgba(10,31,63,0.09)",
-      padding: "16px 18px", opacity, transform: `translateY(${y}px)` }}>
+    <div style={{ flex: 1, background: THEME.surface, borderRadius: 10, border: `1px solid ${up ? "rgba(0,212,255,0.5)" : "rgba(10,31,63,0.09)"}`,
+      padding: "16px 18px", opacity: opacity * (1 - dim), transform: `translateY(${y}px)`,
+      boxShadow: up ? `0 18px 44px -20px rgba(10,31,63,${0.4 * up})` : "none" }}>
       <div style={{ fontFamily: THEME.fontMono, fontWeight: 600, fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase",
         color: THEME.muted, lineHeight: 1.3, minHeight: 26 }}>{kpi.label}</div>
       <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 700, fontSize: 24, letterSpacing: "-0.025em", color: THEME.navy,
@@ -140,10 +144,25 @@ const DeltaBadge = ({ appear, label, sub, xPct, yPx }) => {
   );
 };
 
+/* câmera: overview → cada um dos 5 KPIs → Comparativo anual (desliza) → rola até o Resumo do fluxo de caixa → overview */
+const C6_T = [0, 46, 62, 92, 104, 134, 146, 176, 188, 218, 230, 260, 286, 330, 366, 404, 452, 500, 540, 620];
+const C6_X = [960, 960, 453, 453, 771, 771, 1090, 1090, 1408, 1408, 1726, 1726, 1090, 700, 1250, 1090, 900, 900, 960, 960];
+const C6_Y = [380, 380, 305, 305, 305, 305, 305, 305, 305, 305, 305, 305, 490, 490, 490, 490, 670, 670, 430, 430];
+const C6_S = [1, 1, 1.95, 1.95, 1.95, 1.95, 1.95, 1.95, 1.95, 1.95, 1.95, 1.95, 1.5, 1.7, 1.7, 1.5, 1.6, 1.6, 1.0, 1.0];
+const C6_HOLDS = [[62, 92, 0], [104, 134, 1], [146, 176, 2], [188, 218, 3], [230, 260, 4]];
+
 export const Cena6Comparacao = () => {
-  const tt = useEnter(10, 18);
+  const frame = useCurrentFrame();
+  const tt = useEnter(6, 16);
+  const cx = kf(frame, C6_T, C6_X);
+  const cy = kf(frame, C6_T, C6_Y);
+  const s = kf(frame, C6_T, C6_S);
+  const focusAmt = interpolate(s, [1, 1.95], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  let focusIndex = -1;
+  for (const [a, b, i] of C6_HOLDS) if (frame >= a - 10 && frame <= b + 4) focusIndex = i;
   return (
-    <AbsoluteFill style={{ background: THEME.pageBg }}>
+    <AbsoluteFill style={{ background: THEME.pageBg, overflow: "hidden" }}>
+      <CameraStage cx={cx} cy={cy} s={s}>
       <AppShell breadcrumb={DATA.breadcrumb} contentPadding="26px 34px">
         {/* header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", opacity: tt.opacity, transform: `translateY(${tt.y}px)` }}>
@@ -167,7 +186,7 @@ export const Cena6Comparacao = () => {
 
         {/* 5 KPIs */}
         <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-          {DATA.kpis.map((k, i) => <Kpi key={k.label} kpi={k} index={i} />)}
+          {DATA.kpis.map((k, i) => <Kpi key={k.label} kpi={k} index={i} focusIndex={focusIndex} focusAmt={focusAmt} />)}
         </div>
 
         {/* Comparativo anual */}
@@ -196,7 +215,7 @@ export const Cena6Comparacao = () => {
             </div>
           </div>
           {/* DELTA overlay (moldura/ciano) sobre a coluna ICMS */}
-          <DeltaBadge appear={210} label="ICMS  −R$ 10.520" sub="105.200 → 94.680" xPct={78} yPx={150} />
+          <DeltaBadge appear={300} label="ICMS  −R$ 10.520" sub="105.200 → 94.680" xPct={78} yPx={150} />
         </div>
 
         {/* Resumo do fluxo de caixa */}
@@ -209,9 +228,10 @@ export const Cena6Comparacao = () => {
             ))}
           </div>
           {DATA.cash.map((r, i) => <CashRow key={r.ano} row={r} index={i} />)}
-          <DeltaBadge appear={250} label="Resultado  +R$ 10.520" sub="carga 3,56% → 2,34%" xPct={84} yPx={104} />
+          <DeltaBadge appear={462} label="Resultado  +R$ 10.520" sub="carga 3,56% → 2,34%" xPct={84} yPx={104} />
         </div>
       </AppShell>
+      </CameraStage>
     </AbsoluteFill>
   );
 };

@@ -23,13 +23,13 @@ import { Cena7FluxoCaixa } from "./scenes/Cena7FluxoCaixa";
 /* Durações piloto (frames @30fps). */
 export const DURATIONS = {
   intro: 120, // 4s
-  c1: 360, // 12s  (v3: cursor + destaque 3D do cliente selecionado)
-  c2: 300, // 10s
-  c3: 600, // 20s
-  c4: 500, // 16,7s
-  c5: 440, // 14,7s (v3: zoom em cada um dos 4 KPIs)
-  c6: 500, // 16,7s
-  c7: 440, // 14,7s (v3: zoom + travelling horizontal seguindo o gráfico)
+  c1: 240, // 8s   (v4: cursor rápido + destaque 3D do cliente Vértice)
+  c2: 250, // 8,3s (v4: cursor clica em "Notas" → abre a Cena 3)
+  c3: 520, // 17,3s (v4: rolagem com zoom revelando as linhas de Receitas)
+  c4: 500, // 16,7s (v4: seta clica nas colunas de crédito da Manteiga → drawer)
+  c5: 380, // 12,7s (zoom em cada um dos 4 KPIs, mais rápido)
+  c6: 620, // 20,7s (v4: zoom nos 5 KPIs + Comparativo anual + rolagem ao fluxo)
+  c7: 380, // 12,7s (zoom + travelling seguindo o gráfico, mais rápido)
   outro: 130, // 4,3s
 };
 

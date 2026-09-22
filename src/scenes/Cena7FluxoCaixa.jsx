@@ -45,12 +45,12 @@ const YMAX = 500000;
 const signedBrl = (n) => (n < 0 ? `-${brl(Math.abs(n))}` : brl(n));
 
 /* câmera: keyframes (coordenadas de mundo 1920x1080, calibradas na tela) */
-const CAM_T = [0, 34, 58, 94, 130, 164, 198, 226, 252, 302, 440];
+const CAM_T = [0, 24, 44, 76, 106, 134, 162, 186, 208, 250, 380];
 const CAM_X = [960, 960, 520, 636, 751, 866, 981, 1120, 1120, 960, 960];
 const CAM_Y = [540, 540, 538, 368, 511, 529, 566, 462, 462, 540, 540];
 const CAM_S = [1, 1, 2.3, 2.3, 2.3, 2.3, 2.3, 2.0, 2.0, 1, 1];
-const BAR_T = [46, 82, 118, 152, 186]; // início do crescimento de cada barra confirmada
-const PT_T = [52, 88, 124, 158, 192]; // aparição de cada ponto da linha
+const BAR_T = [36, 66, 96, 122, 150]; // início do crescimento de cada barra confirmada
+const PT_T = [42, 72, 102, 128, 156]; // aparição de cada ponto da linha
 
 const Chart = () => {
   const frame = useCurrentFrame();
@@ -64,7 +64,7 @@ const Chart = () => {
   const yTicks = [500000, 250000, 0, -250000, -500000];
   const confirmed = DATA.saldoAcum.map((v, i) => (v == null ? null : { x: cx(i), y: vY(v), i })).filter(Boolean);
   const pathD = confirmed.map((p, k) => `${k === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  const lineProg = interpolate(frame, [58, 206], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const lineProg = interpolate(frame, [44, 168], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <div style={{ opacity: enter.opacity }}>
@@ -96,7 +96,7 @@ const Chart = () => {
 };
 
 const TableRow = ({ row, index }) => {
-  const appear = 305 + index * 9;
+  const appear = 256 + index * 8;
   const { opacity, y } = useEnter(appear);
   const counted = row.vals.map((v, i) => useCountUp(v ?? 0, appear + 3 + i, 16));
   return (

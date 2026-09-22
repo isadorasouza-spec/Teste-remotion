@@ -8,6 +8,7 @@ import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { THEME, brl, pct } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
 import { AppShell, ClientTabs, Ic, ICON } from "../ui/AppShell";
+import { Cursor, ClickRipple, useClickCursor } from "../ui/anim";
 
 const DATA = {
   breadcrumb: ["Simulações", "VÉRTICE DISTRIBUIDORA ATACADISTA LTDA."],
@@ -30,8 +31,8 @@ const DATA = {
 
 const GRID = "2.2fr 1.3fr 1.6fr 1fr 1.3fr 1.1fr 44px";
 
-const SimRow = ({ row, index, heroPulse }) => {
-  const appear = 78 + index * 20;
+const SimRow = ({ row, index, heroPulse, clickHi }) => {
+  const appear = 58 + index * 16;
   const { opacity, y } = useEnter(appear);
   const resultado = useCountUp(row.resultado, appear + 6, 24);
   const debitos = useCountUp(row.debitos, appear + 8, 24);
@@ -40,7 +41,8 @@ const SimRow = ({ row, index, heroPulse }) => {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: GRID, alignItems: "center", gap: 12,
-      padding: "18px 22px", borderTop: `1px solid ${THEME.cardBorder}`, opacity, transform: `translateY(${y}px)` }}>
+      padding: "18px 22px", borderTop: `1px solid ${THEME.cardBorder}`, opacity, transform: `translateY(${y}px)`,
+      background: clickHi ? `rgba(0,212,255,${0.14 * clickHi})` : "transparent" }}>
       {/* Simulação */}
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ position: "relative", width: 40, height: 46, borderRadius: 6, background: THEME.pageBg,
@@ -99,11 +101,16 @@ const SimRow = ({ row, index, heroPulse }) => {
 
 export const Cena2Comparativo = () => {
   const frame = useCurrentFrame();
-  const eb = useEnter(10);
-  const title = useEnter(14, 20);
-  const desc = useEnter(20);
-  const card = useEnter(46);
-  const heroPulse = interpolate(frame, [150, 168, 250], [0, 1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const eb = useEnter(8);
+  const title = useEnter(12, 18);
+  const desc = useEnter(16);
+  const card = useEnter(38);
+  const heroPulse = interpolate(frame, [104, 120, 250], [0, 1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // cursor: no fim da cena, clica na simulação "Notas" (linha 0) → abre a Cena 3
+  const cur = useClickCursor(frame, {
+    from: { x: 1500, y: 360 }, to: { x: 470, y: 501 }, t0: 150, t1: 182, tClick: 188, appearAt: 146,
+  });
+  const clickHi = interpolate(frame, [186, 196, 230], [0, 1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill style={{ background: THEME.pageBg }}>
@@ -170,9 +177,11 @@ export const Cena2Comparativo = () => {
             ))}
             <div />
           </div>
-          {DATA.rows.map((r, i) => <SimRow key={r.sid} row={r} index={i} heroPulse={heroPulse} />)}
+          {DATA.rows.map((r, i) => <SimRow key={r.sid} row={r} index={i} heroPulse={heroPulse} clickHi={i === 0 ? clickHi : 0} />)}
         </div>
       </AppShell>
+      <ClickRipple x={470} y={501} p={cur.ripple} />
+      {cur.opacity > 0 && <Cursor x={cur.x} y={cur.y} press={cur.press} opacity={cur.opacity} />}
     </AbsoluteFill>
   );
 };
