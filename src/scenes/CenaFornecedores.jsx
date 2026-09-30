@@ -14,6 +14,7 @@ import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { THEME } from "../ui/tokens";
 import { useCountUp, useEnter } from "../ui/motion";
 import { AppShell, Ic, ICON } from "../ui/AppShell";
+import { CameraStage, kf } from "../ui/anim";
 
 const AMBER = "#F59E0B";
 const AMBER_TEXT = "#92400E";
@@ -52,14 +53,17 @@ const PERFIL = {
   sem_credito: { label: "Sem crédito", bg: "rgba(107,114,128,0.12)", color: THEME.muted, border: "rgba(107,114,128,0.2)" },
 };
 
-const CreditoBadge = ({ perfil, pulse }) => {
+const DOT = { integral: "#00D4FF", presumido: "#F59E0B", sem_credito: "#6B7280" };
+
+const CreditoBadge = ({ perfil, pulse = 0 }) => {
   const p = PERFIL[perfil];
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 10,
       fontFamily: THEME.fontMono, fontSize: 10.5, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase",
       background: p.bg, color: p.color, border: `1px solid ${p.border}`,
-      boxShadow: pulse ? `0 0 0 ${3 * pulse}px ${p.border}` : "none" }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: perfil === "integral" ? THEME.ciano : perfil === "presumido" ? AMBER : THEME.muted }} />
+      transform: `scale(${1 + 0.06 * pulse})`, transformOrigin: "left center",
+      boxShadow: pulse ? `0 0 0 ${3 * pulse}px ${p.border}, 0 6px 18px -6px ${p.border}` : "none" }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: DOT[perfil] }} />
       {p.label}
     </span>
   );
@@ -79,11 +83,16 @@ const Stat = ({ s, index }) => {
 };
 
 const Row = ({ row, index, creditPulse }) => {
-  const appear = 80 + index * 13;
+  const appear = 60 + index * 9;
   const { opacity, y } = useEnter(appear);
+  const foc = creditPulse || 0;
+  const focBorder = PERFIL[row.perfil].border;
   return (
     <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 14, alignItems: "center", padding: "14px 18px",
-      background: THEME.surface, border: `1px solid ${row.attention ? "rgba(245,158,11,0.45)" : THEME.cardBorder}`, borderRadius: 8,
+      background: THEME.surface,
+      border: `1px solid ${foc > 0.05 ? focBorder : row.attention ? "rgba(245,158,11,0.45)" : THEME.cardBorder}`,
+      borderRadius: 8, position: "relative", zIndex: foc > 0.05 ? 2 : 1,
+      boxShadow: foc ? `0 10px 30px -12px ${focBorder}` : "none",
       opacity, transform: `translateY(${y}px)` }}>
       {/* Fornecedor + CNPJ */}
       <div>
@@ -120,19 +129,39 @@ const Row = ({ row, index, creditPulse }) => {
   );
 };
 
+/* Centros verticais (mundo 1920x1080) das 6 linhas, na ordem de DATA.rows. */
+const ROW_CY = [497, 571, 645, 719, 793, 867];
+/* Coreografia da câmera: entra na coluna de crédito e desce linha a linha,
+ * parando (holds = keyframes repetidos) em cada TIPO de crédito, depois afasta. */
+const CAM_T  = [0,   108,  138,  164,  184,  210,  230,  256,  276,  302,  322,  348,  368,  398,  430,  480];
+const CAM_CX = [960, 960, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 960,  960];
+const CAM_S  = [1.0, 1.0, 1.85, 1.85, 1.85, 1.85, 1.85, 1.85, 1.85, 1.85, 1.85, 1.85, 1.85, 1.85, 1.0,  1.0];
+const CAM_CY = [540, 540, 497,  497,  571,  571,  645,  645,  719,  719,  793,  793,  867,  867,  540,  540];
+
 export const CenaFornecedores = () => {
   const frame = useCurrentFrame();
   const eb = useEnter(8);
   const title = useEnter(12, 18);
   const sub = useEnter(18);
   const btn = useEnter(22);
-  const tool = useEnter(64);
-  const head = useEnter(72);
-  // realce herói: a coluna "Crédito IBS/CBS" (quem gera e quem não gera)
-  const creditPulse = interpolate(frame, [180, 196, 320], [0, 1, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const tool = useEnter(48);
+  const head = useEnter(56);
+
+  // câmera
+  const camX = kf(frame, CAM_T, CAM_CX);
+  const camY = kf(frame, CAM_T, CAM_CY);
+  const camS = kf(frame, CAM_T, CAM_S);
+  // o quanto estamos "aproximados" (0 tela cheia → 1 em close)
+  const zoom = interpolate(camS, [1.25, 1.7], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // realce herói: a coluna "Crédito IBS/CBS" acende quando aproximamos
+  const creditPulse = zoom;
+  // pulso por linha: acende o badge da linha que está centralizada no close
+  const rowPulse = (i) =>
+    zoom * interpolate(Math.abs(camY - ROW_CY[i]), [0, 46], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
-    <AbsoluteFill style={{ background: THEME.pageBg }}>
+    <AbsoluteFill style={{ background: THEME.pageBg, overflow: "hidden" }}>
+      <CameraStage cx={camX} cy={camY} s={camS}>
       <AppShell breadcrumb={DATA.breadcrumb} active="Fornecedores" contentPadding="30px 40px">
         {/* header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -185,9 +214,10 @@ export const CenaFornecedores = () => {
 
         {/* linhas */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {DATA.rows.map((r, i) => <Row key={r.cnpj} row={r} index={i} creditPulse={creditPulse} />)}
+          {DATA.rows.map((r, i) => <Row key={r.cnpj} row={r} index={i} creditPulse={rowPulse(i)} />)}
         </div>
       </AppShell>
+      </CameraStage>
     </AbsoluteFill>
   );
 };

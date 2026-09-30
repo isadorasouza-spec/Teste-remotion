@@ -98,7 +98,7 @@ export const RemotionRoot = () => {
       <Composition
         id="Fornecedores"
         component={CenaFornecedores}
-        durationInFrames={360}
+        durationInFrames={480}
         {...V}
       />
 
