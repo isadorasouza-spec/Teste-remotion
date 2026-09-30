@@ -19,6 +19,7 @@ import { Cena3Lancamentos } from "./scenes/Cena3Lancamentos";
 import { Cena4Creditos } from "./scenes/Cena4Creditos";
 import { Cena6Comparacao } from "./scenes/Cena6Comparacao";
 import { Cena7FluxoCaixa } from "./scenes/Cena7FluxoCaixa";
+import { CenaFornecedores } from "./scenes/CenaFornecedores";
 import { CardComps, CARD_DUR } from "./scenes/HookCard";
 import { Master, MASTER_DURATION, DURATIONS } from "./Master";
 
@@ -90,6 +91,14 @@ export const RemotionRoot = () => {
         id="Cena7FluxoCaixa"
         component={Cena7FluxoCaixa}
         durationInFrames={DURATIONS.c7}
+        {...V}
+      />
+
+      {/* Cena Fornecedores — acompanhamento de quem gera crédito (standalone) */}
+      <Composition
+        id="Fornecedores"
+        component={CenaFornecedores}
+        durationInFrames={360}
         {...V}
       />
 

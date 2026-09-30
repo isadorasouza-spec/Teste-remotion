@@ -37,7 +37,7 @@ const ICON = {
 const NAV = [
   { group: null, items: [{ k: "home", label: "Home" }, { k: "users", label: "Clientes" }] },
   { group: "Tributária", items: [
-    { k: "caduceus", label: "Simulações", active: true },
+    { k: "caduceus", label: "Simulações" },
     { k: "sheet", label: "Dados Operacionais" },
     { k: "sheet", label: "Notas Fiscais" },
     { k: "truck", label: "Fornecedores" },
@@ -71,7 +71,7 @@ const Brand = () => (
   </div>
 );
 
-const Sidebar = () => {
+const Sidebar = ({ active = "Simulações" }) => {
   const { opacity } = useEnter(0, 0);
   return (
     <div style={{
@@ -93,17 +93,20 @@ const Sidebar = () => {
                 {sec.group}
               </div>
             )}
-            {sec.items.map((it, ii) => (
+            {sec.items.map((it, ii) => {
+              const on = it.label === active;
+              return (
               <div key={ii} style={{
                 display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10,
-                color: it.active ? THEME.ciano : THEME.navText,
-                background: it.active ? THEME.navActiveBg : "transparent",
-                fontFamily: THEME.fontBody, fontWeight: it.active ? 600 : 500, fontSize: 13,
+                color: on ? THEME.ciano : THEME.navText,
+                background: on ? THEME.navActiveBg : "transparent",
+                fontFamily: THEME.fontBody, fontWeight: on ? 600 : 500, fontSize: 13,
               }}>
                 <span style={{ width: 18, height: 18, display: "flex" }}><Ic d={ICON[it.k]} /></span>
                 {it.label}
               </div>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>
@@ -204,9 +207,9 @@ export const ClientTabs = ({ tabs, activeIndex = 0, appear = 8 }) => {
   );
 };
 
-export const AppShell = ({ breadcrumb, contentPadding = "34px 40px", children }) => (
+export const AppShell = ({ breadcrumb, contentPadding = "34px 40px", active = "Simulações", children }) => (
   <>
-    <Sidebar />
+    <Sidebar active={active} />
     <TopBar breadcrumb={breadcrumb} />
     <div style={{ position: "absolute", left: SIDEBAR_W, top: TOPBAR_H, right: 0, bottom: 0, padding: contentPadding }}>
       {children}
