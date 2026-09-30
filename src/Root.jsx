@@ -20,6 +20,7 @@ import { Cena4Creditos } from "./scenes/Cena4Creditos";
 import { Cena6Comparacao } from "./scenes/Cena6Comparacao";
 import { Cena7FluxoCaixa } from "./scenes/Cena7FluxoCaixa";
 import { CenaFornecedores } from "./scenes/CenaFornecedores";
+import { CenaCustoReal } from "./scenes/CenaCustoReal";
 import { CardComps, CARD_DUR } from "./scenes/HookCard";
 import { Master, MASTER_DURATION, DURATIONS } from "./Master";
 
@@ -99,6 +100,14 @@ export const RemotionRoot = () => {
         id="Fornecedores"
         component={CenaFornecedores}
         durationInFrames={480}
+        {...V}
+      />
+
+      {/* Cena Custo Real — comparativo de custo por fornecedor ano a ano (standalone) */}
+      <Composition
+        id="CustoReal"
+        component={CenaCustoReal}
+        durationInFrames={520}
         {...V}
       />
 
