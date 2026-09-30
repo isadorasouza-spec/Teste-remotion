@@ -21,6 +21,7 @@ import { Cena6Comparacao } from "./scenes/Cena6Comparacao";
 import { Cena7FluxoCaixa } from "./scenes/Cena7FluxoCaixa";
 import { CenaFornecedores } from "./scenes/CenaFornecedores";
 import { CenaCustoReal } from "./scenes/CenaCustoReal";
+import { CenaMemoriaCalculo } from "./scenes/CenaMemoriaCalculo";
 import { CardComps, CARD_DUR } from "./scenes/HookCard";
 import { Master, MASTER_DURATION, DURATIONS } from "./Master";
 
@@ -108,6 +109,14 @@ export const RemotionRoot = () => {
         id="CustoReal"
         component={CenaCustoReal}
         durationInFrames={520}
+        {...V}
+      />
+
+      {/* Cena Memória de Cálculo — fonte/rastreabilidade + aprovação humana (standalone) */}
+      <Composition
+        id="MemoriaCalculo"
+        component={CenaMemoriaCalculo}
+        durationInFrames={560}
         {...V}
       />
 
